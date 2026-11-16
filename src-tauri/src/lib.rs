@@ -8,6 +8,7 @@
 //! outside"), and only the Marea you chose (permissions are granted to its exact origin when connecting). The
 //! connection screen is one of the app's own pages, with access to nothing else.
 
+mod actions;
 mod badge;
 mod downloads;
 mod i18n;
@@ -301,7 +302,24 @@ fn build_main<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<WebviewWindow<R>>
         .build()
 }
 
+/// Runs one of Marea's shortcuts (`actions.rs`) in the window, only while it shows your Marea (not the connection
+/// or offline screen).
+fn run_in_marea<R: Runtime>(app: &AppHandle<R>, js: &str) {
+    let Some(window) = app.get_webview_window(MAIN) else {
+        return;
+    };
+    let on_marea = window.url().is_ok_and(|url| Some(server::origin(&url)) == current_origin(app));
+    if on_marea {
+        show_main(app);
+        let _ = window.eval(js);
+    }
+}
+
 fn on_menu<R: Runtime>(app: &AppHandle<R>, id: &str) {
+    if let Some(js) = actions::script(id) {
+        run_in_marea(app, js);
+        return;
+    }
     let window = app.get_webview_window(MAIN);
     let run = |js: &str| {
         if let Some(w) = &window {

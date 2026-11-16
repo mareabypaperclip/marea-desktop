@@ -23,6 +23,13 @@ What a future session needs to know to keep working on Marea for desktop. Read i
 - **Links:** see the comment at the top of `links.rs`. On macOS the navigation handler can't tell the main frame
   from inner frames (videos, emails), so web navigations are allowed there and `on_page_load` corrects a whole
   window that ended up on another site.
+- **Marea's shortcuts in the menus** (`actions.rs`): each menu item runs a fixed script in the Marea page that
+  changes `location.hash` (`#/mail`, `#/new`…) or presses one of Marea's keys on the page body (⌘K for the
+  Assistant, `?` for its shortcuts). They only run while the window shows the chosen Marea. ⌘K has no native
+  accelerator on purpose: inside Marea's editor it means "link". On Windows and Linux there is no menu bar, so the
+  bridge handles Ctrl+1–7 and Ctrl+, itself; its list must match `actions::SECTIONS` (a test checks it). If Marea
+  changes a route, update both and run `node tools/check-actions.mjs`, which runs every script in Marea's test
+  install and checks what it did.
 - **Closing the window hides it** (Dock on macOS, tray on Windows/Linux); quitting is *Quit Marea*. A second
   launch brings the window back (`tauri-plugin-single-instance`). Size and position are remembered
   (`tauri-plugin-window-state`, without the visibility flag).
@@ -39,7 +46,8 @@ What a future session needs to know to keep working on Marea for desktop. Read i
 
 ## Releasing
 
-1. Bump the version in `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml` and `package.json` (same number).
+1. Bump the version in `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml` and `package.json` (same number), and
+   add a `## X.Y.Z` section to `CHANGELOG.md`: the release notes' *What's new* comes from it.
 2. Commit, then tag `vX.Y.Z` and push the tag. `.github/workflows/release.yml` creates a draft release, builds
    macOS (universal), Windows and Linux in parallel and publishes the release only if all three succeed.
 3. Or run the *Release* workflow by hand from the Actions tab.
@@ -77,3 +85,9 @@ the main repository (`http://localhost:8090/dev/`) works.
 were made from small HTML pages rendered with Playwright, using the Inter font from the Marea repository and
 screenshots of the app connected to a demo Marea named "Estudio Paperclip". The window frame in them is a neutral
 drawing, not a real title bar. Retake the screenshots when the app or Marea changes visibly.
+
+The installer images were made the same way: `src-tauri/installer/dmg-background.png` (640×400, the Finder window
+of the disk image; the waves start high because macOS may crop the bottom by the title bar's height) and
+`src-tauri/installer/nsis-sidebar.bmp` (164×314, 24-bit BMP, the welcome and finish pages of the Windows
+installer). They carry no words, so they work in every language. There is deliberately no license screen: the
+AGPL doesn't need to be accepted to use the app (don't set `bundle.licenseFile`).

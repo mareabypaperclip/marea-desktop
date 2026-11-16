@@ -41,9 +41,15 @@ jobs:
               if (!found.draft) core.setFailed(`${tag} is already published: bump the version number.`);
               return found.id;
             }
+            // "What's new" comes from the version's section in CHANGELOG.md, if there is one.
+            const fs = require('fs');
+            const changelog = fs.existsSync('CHANGELOG.md') ? fs.readFileSync('CHANGELOG.md', 'utf8') : '';
+            const section = changelog.split(/^## /m).find((part) => part.startsWith(`${version}\n`));
+            const changes = section ? section.slice(section.indexOf('\n') + 1).trim() : '';
             const body = [
               `Marea for desktop ${version}.`,
               '',
+              ...(changes ? ["**What's new**", changes, ''] : []),
               '**Downloads**',
               '- **macOS** 11 or later (Apple Silicon and Intel): `Marea_' + version + '_universal.dmg`',
               '- **Windows** 10 and 11: `Marea_' + version + '_x64-setup.exe`',

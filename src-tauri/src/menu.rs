@@ -1,10 +1,13 @@
-//! Menus. On macOS, the usual menu bar (with Edit, so ⌘C and ⌘V work). On Windows and Linux there is no menu bar
-//! (like Slack), and an icon next to the clock opens Marea, changes server or quits: closing the window keeps the
-//! app running so notifications keep arriving.
+//! Menus. On macOS, the usual menu bar (with Edit, so ⌘C and ⌘V work) plus Marea's own shortcuts: new wave,
+//! compose, search and a Go menu with every section (⌘1 to ⌘7). On Windows and Linux there is no menu bar (like
+//! Slack): an icon next to the clock opens Marea, has the main shortcuts, changes server or quits, and closing the
+//! window keeps the app running so notifications keep arriving. The section keys (Ctrl+1 to Ctrl+7) are handled
+//! by the bridge there.
 
 use tauri::menu::{Menu, MenuBuilder, MenuItemBuilder};
 use tauri::{AppHandle, Runtime};
 
+use crate::actions;
 use crate::i18n::t;
 
 pub const CHANGE_SERVER: &str = "change_server";
@@ -19,8 +22,8 @@ pub const HELP: &str = "help";
 pub const OPEN: &str = "open";
 pub const QUIT: &str = "quit";
 
-/// The macOS menu bar.
-#[cfg(target_os = "macos")]
+/// The macOS menu bar. Compiled everywhere, so the checks on Linux cover it too; only macOS uses it.
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 pub fn app_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
     use tauri::menu::{AboutMetadataBuilder, PredefinedMenuItem, SubmenuBuilder};
 
@@ -33,11 +36,21 @@ pub fn app_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
         .build();
     let label = |key: &str| Some(t(key));
 
+    let item = |id: &str, key: &str, accelerator: Option<&str>| {
+        let builder = MenuItemBuilder::with_id(id, t(key));
+        match accelerator {
+            Some(keys) => builder.accelerator(keys).build(app),
+            None => builder.build(app),
+        }
+    };
+
     let marea = SubmenuBuilder::new(app, "Marea")
         .item(&PredefinedMenuItem::about(app, label("menu.about").as_deref(), Some(about))?)
         .separator()
-        .item(&MenuItemBuilder::with_id(CHECK_UPDATES, t("menu.check_updates")).build(app)?)
-        .item(&MenuItemBuilder::with_id(CHANGE_SERVER, t("menu.change_server")).build(app)?)
+        .item(&item(actions::SETTINGS, "menu.settings", Some("CmdOrCtrl+Comma"))?)
+        .separator()
+        .item(&item(CHECK_UPDATES, "menu.check_updates", None)?)
+        .item(&item(CHANGE_SERVER, "menu.change_server", None)?)
         .separator()
         .item(&PredefinedMenuItem::services(app, label("menu.services").as_deref())?)
         .separator()
@@ -46,6 +59,17 @@ pub fn app_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
         .item(&PredefinedMenuItem::show_all(app, label("menu.show_all").as_deref())?)
         .separator()
         .item(&PredefinedMenuItem::quit(app, label("menu.quit").as_deref())?)
+        .build()?;
+
+    // ⌘K stays with the page (inside an editor it means "link"), so the Assistant item has no shortcut of its own.
+    let file = SubmenuBuilder::new(app, t("menu.file"))
+        .item(&item(actions::NEW_WAVE, "menu.new_wave", Some("CmdOrCtrl+N"))?)
+        .item(&item(actions::COMPOSE, "menu.compose", Some("CmdOrCtrl+Shift+N"))?)
+        .separator()
+        .item(&item(actions::SEARCH, "menu.search", Some("CmdOrCtrl+F"))?)
+        .item(&item(actions::ASSISTANT, "menu.assistant", None)?)
+        .separator()
+        .item(&PredefinedMenuItem::close_window(app, label("menu.close_window").as_deref())?)
         .build()?;
 
     let edit = SubmenuBuilder::new(app, t("menu.edit"))
@@ -59,36 +83,52 @@ pub fn app_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
         .build()?;
 
     let view = SubmenuBuilder::new(app, t("menu.view"))
-        .item(&MenuItemBuilder::with_id(RELOAD, t("menu.reload")).accelerator("CmdOrCtrl+R").build(app)?)
-        .item(&MenuItemBuilder::with_id(BACK, t("menu.back")).accelerator("CmdOrCtrl+[").build(app)?)
-        .item(&MenuItemBuilder::with_id(FORWARD, t("menu.forward")).accelerator("CmdOrCtrl+]").build(app)?)
+        .item(&item(RELOAD, "menu.reload", Some("CmdOrCtrl+R"))?)
         .separator()
-        .item(&MenuItemBuilder::with_id(ZOOM_RESET, t("menu.actual_size")).accelerator("CmdOrCtrl+0").build(app)?)
-        .item(&MenuItemBuilder::with_id(ZOOM_IN, t("menu.zoom_in")).accelerator("CmdOrCtrl+Plus").build(app)?)
-        .item(&MenuItemBuilder::with_id(ZOOM_OUT, t("menu.zoom_out")).accelerator("CmdOrCtrl+-").build(app)?)
+        .item(&item(ZOOM_RESET, "menu.actual_size", Some("CmdOrCtrl+0"))?)
+        .item(&item(ZOOM_IN, "menu.zoom_in", Some("CmdOrCtrl+Plus"))?)
+        .item(&item(ZOOM_OUT, "menu.zoom_out", Some("CmdOrCtrl+-"))?)
         .separator()
         .item(&PredefinedMenuItem::fullscreen(app, label("menu.fullscreen").as_deref())?)
+        .build()?;
+
+    let mut go = SubmenuBuilder::new(app, t("menu.go"));
+    for (n, &(id, key)) in actions::SECTIONS.iter().enumerate() {
+        go = go.item(&item(id, key, Some(format!("CmdOrCtrl+{}", n + 1).as_str()))?);
+    }
+    let go = go
+        .separator()
+        .item(&item(BACK, "menu.back", Some("CmdOrCtrl+["))?)
+        .item(&item(FORWARD, "menu.forward", Some("CmdOrCtrl+]"))?)
         .build()?;
 
     let window = SubmenuBuilder::new(app, t("menu.window"))
         .item(&PredefinedMenuItem::minimize(app, label("menu.minimize").as_deref())?)
         .item(&PredefinedMenuItem::maximize(app, label("menu.zoom").as_deref())?)
-        .separator()
-        .item(&PredefinedMenuItem::close_window(app, label("menu.close_window").as_deref())?)
         .build()?;
 
     let help = SubmenuBuilder::new(app, t("menu.help"))
-        .item(&MenuItemBuilder::with_id(HELP, t("menu.help_github")).build(app)?)
+        .item(&item(actions::SHORTCUTS, "menu.shortcuts", None)?)
+        .separator()
+        .item(&item(HELP, "menu.help_github", None)?)
         .build()?;
 
-    MenuBuilder::new(app).items(&[&marea, &edit, &view, &window, &help]).build()
+    MenuBuilder::new(app).items(&[&marea, &file, &edit, &view, &go, &window, &help]).build()
 }
 
 /// The menu of the icon next to the clock (Windows and Linux).
 #[cfg(not(target_os = "macos"))]
 pub fn tray_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
+    let item = |id: &str, key: &str| MenuItemBuilder::with_id(id, t(key)).build(app);
     MenuBuilder::new(app)
-        .item(&MenuItemBuilder::with_id(OPEN, t("menu.open")).build(app)?)
+        .item(&item(OPEN, "menu.open")?)
+        .separator()
+        .item(&item(actions::NEW_WAVE, "menu.new_wave")?)
+        .item(&item(actions::COMPOSE, "menu.compose")?)
+        .separator()
+        .item(&item(actions::MAIL, "menu.mail")?)
+        .item(&item(actions::AGENDA, "menu.agenda")?)
+        .item(&item(actions::SETTINGS, "menu.settings")?)
         .separator()
         .item(&MenuItemBuilder::with_id(CHANGE_SERVER, t("menu.change_server")).build(app)?)
         .item(&MenuItemBuilder::with_id(CHECK_UPDATES, t("menu.check_updates")).build(app)?)

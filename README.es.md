@@ -40,8 +40,11 @@ rápido y usa el motor web que ya trae tu sistema.
 - **Una pantalla tranquila sin conexión.** Si se va la red o el servidor, te lo dice, lo reintenta sola y te vuelve
   a meter en cuanto puede.
 - **Habla tu idioma:** español, inglés, francés y catalán, según tu sistema.
-- **Zoom con el teclado:** <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>+</kbd> y <kbd>-</kbd>. En macOS, un menú nativo añade
-  recargar, atrás y adelante.
+- **Atajos a toda Marea.** En macOS, la barra de menús tiene *Nueva wave* (<kbd>⌘</kbd><kbd>N</kbd>), *Redactar
+  correo* (<kbd>⇧</kbd><kbd>⌘</kbd><kbd>N</kbd>), *Buscar* (<kbd>⌘</kbd><kbd>F</kbd>), el Asistente y un menú *Ir*
+  con todas las secciones (<kbd>⌘</kbd><kbd>1</kbd> a <kbd>⌘</kbd><kbd>7</kbd>). En Windows y Linux,
+  <kbd>Ctrl</kbd> <kbd>1</kbd> a <kbd>7</kbd> abren las secciones, y el icono junto al reloj tiene nueva wave,
+  redactar correo, correo y agenda. Zoom con <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>+</kbd> y <kbd>-</kbd>.
 - **Avisa de las versiones nuevas** sin agobiar: una vez, y otra solo si pasados tres días no has actualizado.
 
 <p align="center">

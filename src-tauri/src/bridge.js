@@ -3,6 +3,8 @@
 // - Tells Marea it runs inside the app (window.__MAREA_DESKTOP__), in case it ever wants to behave differently.
 // - Notifications Marea sends through the browser's standard API (Notification) become system notifications.
 // - Links to other sites open in your browser, not inside the window.
+// - On Windows and Linux, Ctrl+1 to Ctrl+7 open Marea's sections and Ctrl+, its settings (on macOS the menu bar
+//   has these keys).
 //
 // It can only ask the app for two things: "show this notification" and "open this link outside". No reading files
 // or touching the computer: the app's permissions allow nothing more.
@@ -84,4 +86,21 @@
     },
     true
   );
+
+  // ── Section keys on Windows and Linux (same order as SECTIONS in actions.rs) ──
+  if ('__PLATFORM__' !== 'macos') {
+    var SECTIONS = ['#/', '#/mail', '#/agenda', '#/people', '#/drop', '#/podcasts', '#/notas'];
+    document.addEventListener(
+      'keydown',
+      function (ev) {
+        if (!ev.ctrlKey || ev.altKey || ev.shiftKey || ev.metaKey) return;
+        var digit = /^Digit([1-7])$/.exec(ev.code || '');
+        var hash = digit ? SECTIONS[Number(digit[1]) - 1] : ev.key === ',' ? '#/settings' : null;
+        if (!hash) return;
+        ev.preventDefault();
+        location.hash = hash;
+      },
+      true
+    );
+  }
 })();

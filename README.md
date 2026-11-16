@@ -39,8 +39,11 @@ and adds what a browser tab can't. It's small, it starts fast and it uses the we
 - **A calm offline screen.** If the network or the server goes away, the app says so, retries on its own and gets
   you back in as soon as it can.
 - **Speaks your language:** English, Spanish, French and Catalan, picked from your system.
-- **Zoom from the keyboard** with <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>+</kbd> and <kbd>-</kbd>. On macOS, a native menu
-  adds reload, back and forward.
+- **Shortcuts to all of Marea.** On macOS, the menu bar has *New Wave* (<kbd>⌘</kbd><kbd>N</kbd>), *Compose
+  Mail* (<kbd>⇧</kbd><kbd>⌘</kbd><kbd>N</kbd>), *Search* (<kbd>⌘</kbd><kbd>F</kbd>), the Assistant and a *Go* menu
+  with every section (<kbd>⌘</kbd><kbd>1</kbd> to <kbd>⌘</kbd><kbd>7</kbd>). On Windows and Linux, <kbd>Ctrl</kbd>
+  <kbd>1</kbd> to <kbd>7</kbd> open the sections, and the icon next to the clock has new wave, compose, mail and
+  calendar. Zoom with <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>+</kbd> and <kbd>-</kbd>.
 - **Tells you about new versions** without nagging: once, and again only after three days if you haven't updated.
 
 <p align="center">
