@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Marea</title>
+  <link rel="stylesheet" href="app.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <main class="card" aria-live="polite">
+    <img class="logo" src="marea.svg" alt="" width="72" height="72">
+
+    <!-- Loading: while checking whether a Marea is saved -->
+    <section data-view="loading" class="view">
+      <div class="spinner" aria-hidden="true"></div>
+      <p class="muted" data-i18n="loading"></p>
+    </section>
+
+    <!-- Choose your Marea -->
+    <section data-view="setup" class="view" hidden>
+      <h1 data-i18n="setup.title"></h1>
+      <p class="lead" data-i18n="setup.lead"></p>
+      <form id="setup-form" novalidate autocomplete="off">
+        <label for="address" data-i18n="setup.label"></label>
+        <input id="address" name="address" type="text" inputmode="url" data-i18n-placeholder="setup.placeholder"
+               autocapitalize="off" autocorrect="off" spellcheck="false" required>
+        <p id="setup-error" class="error" role="alert" hidden></p>
+        <div class="actions">
+          <button id="back" type="button" class="btn" hidden></button>
+          <button id="connect" type="submit" class="btn primary" data-i18n="setup.connect"></button>
+        </div>
+      </form>
+      <p class="hint" data-i18n="setup.hint"></p>
+    </section>
+
+    <!-- Connecting -->
+    <section data-view="connecting" class="view" hidden>
+      <div class="spinner" aria-hidden="true"></div>
+      <h1 id="connecting-title"></h1>
+      <p id="connecting-host" class="muted"></p>
+    </section>
+
+    <!-- Offline -->
+    <section data-view="offline" class="view" hidden>
+      <div class="offline-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 8.8a15 15 0 0 1 20 0"/><path d="M5 12.4a10 10 0 0 1 14 0"/><path d="M8.5 16a5 5 0 0 1 7 0"/><path d="M12 19.5h.01"/><path d="M3 3l18 18"/>
+        </svg>
+      </div>
+      <h1 data-i18n="offline.title"></h1>
+      <p id="offline-host" class="host"></p>
+      <p id="offline-message" class="muted"></p>
+      <p id="offline-countdown" class="hint"></p>
+      <div class="actions">
+        <button id="change" type="button" class="btn" data-i18n="offline.change"></button>
+        <button id="retry" type="button" class="btn primary" data-i18n="offline.retry"></button>
+      </div>
+    </section>
+  </main>
+  <footer id="footer" class="footer"></footer>
+</body>
+</html>

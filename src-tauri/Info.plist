@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <!-- Marea calls and video calls: macOS asks for permission with these texts -->
+  <key>NSCameraUsageDescription</key>
+  <string>Marea uses the camera for video calls.</string>
+  <key>NSMicrophoneUsageDescription</key>
+  <string>Marea uses the microphone for calls and voice messages.</string>
+  <key>CFBundleDevelopmentRegion</key>
+  <string>en</string>
+  <key>CFBundleLocalizations</key>
+  <array>
+    <string>en</string>
+    <string>es</string>
+    <string>fr</string>
+    <string>ca</string>
+  </array>
+  <key>NSHumanReadableCopyright</key>
+  <string>© 2026 Paperclip · AGPL-3.0</string>
+</dict>
+</plist>

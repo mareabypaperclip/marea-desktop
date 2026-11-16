@@ -1,0 +1,6 @@
+// On Windows, no console window behind the app
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
+fn main() {
+    marea_desktop_lib::run()
+}
