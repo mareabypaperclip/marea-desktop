@@ -1,5 +1,6 @@
-# Checks for every change: formatting, compiler lints (clippy) and tests. On Linux, the fastest; macOS and Windows
-# are built when a release is published.
+# Checks for every change: formatting, compiler lints (clippy) and tests on Linux, and clippy and tests on macOS
+# and Windows too, because each system has code of its own (Core Location and the title bar on macOS, the badge
+# on Windows).
 name: Check
 
 on:
@@ -28,6 +29,28 @@ jobs:
       - name: Format
         working-directory: src-tauri
         run: cargo fmt --check
+      - name: Clippy
+        working-directory: src-tauri
+        run: cargo clippy --all-targets -- -D warnings
+      - name: Tests
+        working-directory: src-tauri
+        run: cargo test
+
+  other-systems:
+    strategy:
+      fail-fast: false
+      matrix:
+        # Intel Mac on purpose: GitHub's Apple Silicon runners are often short of capacity.
+        platform: [macos-15-intel, windows-latest]
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
       - name: Clippy
         working-directory: src-tauri
         run: cargo clippy --all-targets -- -D warnings

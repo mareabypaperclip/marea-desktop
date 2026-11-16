@@ -1,5 +1,6 @@
 // The app's own commands get their own permissions ("allow-…"), so each page can only use its own: the
-// connection screen, the setup commands; the remote Marea, only notifications and opening links outside.
+// connection screen, the setup commands; the remote Marea, only notifications, opening links outside and (macOS)
+// its location.
 const COMMANDS: &[&str] = &[
     // Connection screen (the app's own page)
     "app_info",
@@ -10,6 +11,7 @@ const COMMANDS: &[&str] = &[
     "cancel_setup",
     // The remote Marea
     "notify",
+    "locate",
     "open_external",
 ];
 

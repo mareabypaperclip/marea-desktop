@@ -26,10 +26,12 @@ and adds what a browser tab can't. It's small, it starts fast and it uses the we
 
 ## Features
 
-- **An app of its own.** Its own window and icon in the Dock, the taskbar or your launcher. It remembers its size
-  and position, and a second launch just brings the window back.
-- **Notifications from the system,** with the app's name and icon. Today that covers calendar reminders and
-  incoming calls; mentions and new messages are coming with the next versions of Marea.
+- **An app of its own.** Its own window and icon in the Dock, the taskbar or your launcher. On macOS, Marea's
+  blue bar reaches the top of the window, with the window buttons inside it. It remembers its size and position,
+  can open at login (ready in the background), and a second launch just brings the window back.
+- **Notifications from the system** for new messages, mentions, calendar reminders and calls, with the app's
+  name and icon, while the window isn't in front. Each wave's own setting (muted, mentions only, snoozed) is
+  respected, and coming back to the window right after one opens that wave.
 - **The pending count on the icon:** a number on the Dock icon on macOS and on the taskbar button on Windows (on
   Linux, wherever your desktop shows it).
 - **Stays reachable.** Closing the window keeps Marea running in the Dock (macOS) or next to the clock (Windows and
@@ -38,6 +40,7 @@ and adds what a browser tab can't. It's small, it starts fast and it uses the we
   they finish. Links to other sites open in your usual browser; signing in with Google or Microsoft stays inside.
 - **A calm offline screen.** If the network or the server goes away, the app says so, retries on its own and gets
   you back in as soon as it can.
+- **Camera, microphone and location** for calls and the weather, each behind your system's own permission.
 - **Speaks your language:** English, Spanish, French and Catalan, picked from your system.
 - **Shortcuts to all of Marea.** On macOS, the menu bar has *New Wave* (<kbd>⌘</kbd><kbd>N</kbd>), *Compose
   Mail* (<kbd>⇧</kbd><kbd>⌘</kbd><kbd>N</kbd>), *Search* (<kbd>⌘</kbd><kbd>F</kbd>), the Assistant and a *Go* menu
@@ -91,9 +94,10 @@ on macOS or the icon next to the clock on Windows and Linux.
   public API. There are no analytics, no telemetry and no accounts of ours.
 - **https only.** The app refuses addresses without https (except `localhost`, for development) and refuses
   servers that redirect somewhere else.
-- **The smallest set of permissions.** Your Marea can ask the app for exactly two things: *show this
-  notification* and *open this link in the browser*. Both are granted to its exact address when you connect, and
-  to nothing else. Other sites never get them, and nothing can read your files.
+- **The smallest set of permissions.** Your Marea can ask the app for very few things: *show this
+  notification*, *open this link in the browser* and, on macOS, *where am I?* (behind the system's own prompt)
+  and *move the window* (from its top bar). They are granted to its exact address when you connect, and to
+  nothing else. Other sites never get them, and nothing can read your files.
 - **Your data stays in Marea.** The app keeps only the server address and the window position. Your session
   lives in the system web engine, as it would in a browser.
 - **Open source** under the AGPL, built in public by [GitHub Actions](.github/workflows/release.yml) from this

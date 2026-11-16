@@ -82,6 +82,8 @@
   "menu.podcasts": "Podcasts",
   "menu.notes": "Notes",
   "menu.shortcuts": "Dreceres de teclat",
+  "menu.open_at_login": "Obre en iniciar la sessió",
+  "menu.print": "Imprimeix…",
   "about.copyright": "© 2026 Paperclip · Llicència AGPL-3.0",
   "download.done.title": "Baixada acabada",
   "download.done.body": "{name} és a la teva carpeta de Baixades.",
@@ -102,5 +104,6 @@
   "update.err.offline": "no hi ha connexió amb GitHub",
   "update.err.none": "encara no s'ha publicat cap versió",
   "update.err.status": "GitHub ha respost {status}",
-  "update.err.unexpected": "resposta inesperada de GitHub"
+  "update.err.unexpected": "resposta inesperada de GitHub",
+  "error.open_at_login": "No s'ha pogut canviar si Marea s'obre en iniciar la sessió."
 }

@@ -1,2 +1,4 @@
 "NSCameraUsageDescription" = "Marea fa servir la càmera a les videotrucades.";
 "NSMicrophoneUsageDescription" = "Marea fa servir el micròfon a les trucades i els missatges de veu.";
+"NSLocationUsageDescription" = "Marea fa servir la teva ubicació només quan l'hi demanes, per exemple per mostrar-te el temps on ets.";
+"NSLocationWhenInUseUsageDescription" = "Marea fa servir la teva ubicació només quan l'hi demanes, per exemple per mostrar-te el temps on ets.";

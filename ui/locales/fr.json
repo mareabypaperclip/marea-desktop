@@ -82,6 +82,8 @@
   "menu.podcasts": "Podcasts",
   "menu.notes": "Notes",
   "menu.shortcuts": "Raccourcis clavier",
+  "menu.open_at_login": "Ouvrir à l'ouverture de session",
+  "menu.print": "Imprimer…",
   "about.copyright": "© 2026 Paperclip · Licence AGPL-3.0",
   "download.done.title": "Téléchargement terminé",
   "download.done.body": "{name} se trouve dans votre dossier Téléchargements.",
@@ -102,5 +104,6 @@
   "update.err.offline": "GitHub est injoignable",
   "update.err.none": "aucune version n'a encore été publiée",
   "update.err.status": "GitHub a répondu {status}",
-  "update.err.unexpected": "réponse inattendue de GitHub"
+  "update.err.unexpected": "réponse inattendue de GitHub",
+  "error.open_at_login": "Impossible de changer l'ouverture de Marea à l'ouverture de session."
 }

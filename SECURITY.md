@@ -21,8 +21,9 @@ Problems in Marea itself (the server and the web app) belong in the
 These are the boundaries we treat as security bugs if they break:
 
 - The app only loads the Marea chosen by the user, over https (plain http only for `localhost`).
-- Pages from that Marea can call exactly two app functions: show a notification and open a link in the system
-  browser. No other site can call any.
+- Pages from that Marea can call only a few app functions: show a notification, open a link in the system
+  browser and, on macOS, get the location (after the system's own permission prompt, at kilometre accuracy) and
+  move or zoom the window. No other site can call any.
 - Going to another site opens it in the system browser; the app window stays on the chosen Marea (the Google and
   Microsoft sign-in pages excepted).
 - Downloads are saved only inside the user's Downloads folder, with cleaned-up file names.

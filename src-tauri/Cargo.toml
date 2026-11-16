@@ -1,6 +1,6 @@
 [package]
 name = "marea-desktop"
-version = "0.1.1"
+version = "0.2.0"
 description = "Marea para Mac y Windows"
 authors = ["Paperclip"]
 license = "AGPL-3.0-or-later"
@@ -28,7 +28,12 @@ serde_json = "1"
 url = "2"
 sys-locale = "0.3"
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
-tokio = { version = "1", features = ["time"] }
+tokio = { version = "1", features = ["time", "sync"] }
+tauri-plugin-autostart = "2"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+# Core Location (your position, for the weather): plain Objective-C messages, see location.rs
+objc2 = "0.6"
 
 [profile.release]
 codegen-units = 1

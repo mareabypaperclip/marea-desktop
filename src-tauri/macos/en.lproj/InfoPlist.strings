@@ -1,2 +1,4 @@
 "NSCameraUsageDescription" = "Marea uses the camera for video calls.";
 "NSMicrophoneUsageDescription" = "Marea uses the microphone for calls and voice messages.";
+"NSLocationUsageDescription" = "Marea uses your location only when you ask it to, for example to show your local weather.";
+"NSLocationWhenInUseUsageDescription" = "Marea uses your location only when you ask it to, for example to show your local weather.";

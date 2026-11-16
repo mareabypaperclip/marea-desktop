@@ -13,8 +13,14 @@ What a future session needs to know to keep working on Marea for desktop. Read i
   - `capabilities/local.json`: the connection screen may call `app_info`, `start`, `check_server`, `connect`,
     `retry`, `cancel_setup` and `open_external`.
   - At runtime, `grant()` in `lib.rs` adds a capability for `https://<server>/*` with only `allow-notify` and
-    `allow-open-external`. The plugins (notification, opener, dialog, store) are used from Rust only: no page has
-    their JavaScript permissions.
+    `allow-open-external`, and on macOS three more, each with its reason:
+    - `allow-locate`: WKWebView never gives pages your location inside apps, so the bridge asks the app, which
+      asks Core Location (`location.rs`). macOS shows its own permission prompt; kilometre accuracy only.
+    - `core:window:allow-start-dragging` and `core:window:allow-internal-toggle-maximize`: with the title bar
+      overlaid, Marea's top bar is the only place to drag the window from (and double-click to zoom). The worst
+      a page could do with them is move or zoom the window.
+    The plugins (notification, opener, dialog, store, autostart) are used from Rust only: no page has their
+    JavaScript permissions. The connection screen also gets the two window permissions, for its drag strip.
 - **The bridge** (`src-tauri/src/bridge.js`, injected before every page): replaces `window.Notification` so
   Marea's standard notifications become system notifications, sends clicks on links to other sites to the
   browser, and exposes `window.__MAREA_DESKTOP__ = { version, platform }`.
@@ -30,6 +36,23 @@ What a future session needs to know to keep working on Marea for desktop. Read i
   bridge handles Ctrl+1–7 and Ctrl+, itself; its list must match `actions::SECTIONS` (a test checks it). If Marea
   changes a route, update both and run `node tools/check-actions.mjs`, which runs every script in Marea's test
   install and checks what it did.
+  `node tools/check-bridge.mjs` does the same for the bridge (as macOS, with a fake app behind it): new-message
+  notifications, focus opening the wave, the top bar's room and drag region, and location through Marea's
+  weather dialog.
+- **New-message notifications** (in the bridge): every 45 s the page fetches `api.php?a=inbox` (the same list
+  Marea shows; the server already applies each wave's notify setting to `unread`) and notifies waves whose
+  `updated` grew while unread, only when the window isn't focused. The first look is only a baseline. Focus
+  within 30 s of a notification opens its wave (clicking a notification only brings the app forward; the
+  notification plugin has no click callback on desktop). Hidden windows may have their timers throttled by
+  WebKit or App Nap: untested on a real Mac how late they arrive.
+- **macOS title bar:** `TitleBarStyle::Overlay`, hidden title and the traffic lights at (18, 28), centred on
+  Marea's 60 px top bar. The bridge gives `header.top` 86 px of left padding and `data-tauri-drag-region="deep"`
+  (Tauri's drag script skips its buttons and fields), through the CSSOM because Marea's CSP blocks `<style>`.
+  Pages without that bar (sign-in, public pages) get a 28 px invisible drag strip; so does the connection screen.
+- **macOS entitlements** (`Entitlements.plist`): the bundle is signed with the hardened runtime, which blocks
+  the camera, the microphone and location unless declared. Without them, calls would fail silently.
+- **Open at login:** `tauri-plugin-autostart` (LaunchAgent on macOS, registry on Windows, `~/.config/autostart`
+  on Linux) with the `--autostart` argument, which starts the window hidden.
 - **Closing the window hides it** (Dock on macOS, tray on Windows/Linux); quitting is *Quit Marea*. A second
   launch brings the window back (`tauri-plugin-single-instance`). Size and position are remembered
   (`tauri-plugin-window-state`, without the visibility flag).
@@ -65,19 +88,17 @@ DISPLAY=:99 import -window root shot.png   # ImageMagick; drive it with xdotool
 `http://localhost…` is accepted as a server for testing (everything else must be https); the Marea test install of
 the main repository (`http://localhost:8090/dev/`) works.
 
-## Known limitations (0.1)
+## Known limitations
 
 - **Unsigned:** macOS Gatekeeper and Windows SmartScreen warn on first launch. Signing needs an Apple Developer
   account and a Windows code-signing certificate.
-- **Notifications only cover what Marea sends through the standard API while the window is hidden:** today,
-  calendar reminders and incoming calls. Mentions and messages arrive in Marea through Web Push, which webviews
-  don't support; Marea itself has to start showing them with `Notification` when the page isn't focused (noted
-  in Marea's roadmap). Marea checks `document.visibilityState`, so a window that is visible but behind others
-  gets no notification yet.
+- **Notifications:** new messages come from the bridge's own check (see above), up to 45 s late. Important
+  mail isn't notified yet (reading the mailbox every minute is expensive); Marea's own reminders and calls
+  arrive as before.
 - **Passkeys** may not work inside the macOS webview (WKWebView needs associated-domain entitlements, which need
   signing). Password + 2FA code works.
 - **Screen sharing** in calls depends on each webview; untested.
-- **Clicking a notification** brings the app forward on macOS; it doesn't open the related wave yet.
+- **Clicking a notification** brings the app forward; the wave opens because focus follows it within 30 s.
 
 ## Repository images
 

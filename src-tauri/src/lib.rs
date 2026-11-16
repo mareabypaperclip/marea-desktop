@@ -4,15 +4,17 @@
 //! can't: its own icon in the Dock or taskbar, system notifications, the pending count on the icon, downloads in
 //! the Downloads folder and outside links in your browser.
 //!
-//! Security: your Marea can only ask the app for two things ("show this notification" and "open this link
-//! outside"), and only the Marea you chose (permissions are granted to its exact origin when connecting). The
-//! connection screen is one of the app's own pages, with access to nothing else.
+//! Security: your Marea can only ask the app for a few harmless things ("show this notification", "open this
+//! link outside" and, on macOS, "where am I?" behind the system's own permission prompt, plus moving the window
+//! by its top bar), and only the Marea you chose (permissions are granted to its exact origin when connecting).
+//! The connection screen is one of the app's own pages, with access to nothing else.
 
 mod actions;
 mod badge;
 mod downloads;
 mod i18n;
 mod links;
+mod location;
 mod menu;
 mod server;
 mod updates;
@@ -25,6 +27,7 @@ use serde::Serialize;
 use tauri::ipc::CapabilityBuilder;
 use tauri::webview::{DownloadEvent, NewWindowResponse, PageLoadEvent};
 use tauri::{AppHandle, Manager, RunEvent, Runtime, WebviewUrl, WebviewWindow, WebviewWindowBuilder, WindowEvent};
+use tauri_plugin_autostart::ManagerExt as _;
 use tauri_plugin_notification::NotificationExt;
 use tauri_plugin_opener::OpenerExt;
 use url::Url;
@@ -87,7 +90,12 @@ fn enter<R: Runtime>(app: &AppHandle<R>, base: &Url) -> Result<(), String> {
     window.navigate(base.clone()).map_err(|e| tf("error.open", &[("error", &e.to_string())]))
 }
 
-/// Lets that Marea (and only that one) send notifications and open links outside.
+/// The argument the app gets when the system opens it at login: it starts with the window hidden.
+const AUTOSTART_ARG: &str = "--autostart";
+
+/// Lets that Marea (and only that one) send notifications and open links outside. On macOS, also ask for your
+/// location (Core Location shows its own prompt) and move the window by its top bar, which reaches the top of
+/// the window there (see NOTES.md, "Permissions").
 fn grant<R: Runtime>(app: &AppHandle<R>, origin: &str) -> Result<(), String> {
     let session = app.state::<Session>();
     let mut granted = session.granted.lock().map_err(|_| t("error.internal"))?;
@@ -100,6 +108,11 @@ fn grant<R: Runtime>(app: &AppHandle<R>, origin: &str) -> Result<(), String> {
         .window(MAIN)
         .permission("allow-notify")
         .permission("allow-open-external");
+    #[cfg(target_os = "macos")]
+    let capability = capability
+        .permission("allow-locate")
+        .permission("core:window:allow-start-dragging")
+        .permission("core:window:allow-internal-toggle-maximize");
     app.add_capability(capability).map_err(|e| tf("error.permission", &[("error", &e.to_string())]))?;
     granted.insert(origin.to_string());
     Ok(())
@@ -235,6 +248,11 @@ fn notify(app: AppHandle, title: String, body: String) {
 }
 
 #[tauri::command]
+async fn locate(app: AppHandle) -> Result<location::Position, String> {
+    location::locate(&app).await.map_err(String::from)
+}
+
+#[tauri::command]
 fn open_external(app: AppHandle, url: String) -> Result<(), String> {
     let url = links::external_ok(&url).ok_or_else(|| t("error.link"))?;
     app.opener().open_url(url.as_str(), None::<&str>).map_err(|e| tf("error.link_open", &[("error", &e.to_string())]))
@@ -249,11 +267,23 @@ fn build_main<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<WebviewWindow<R>>
     let on_download = app.clone();
     let on_load = app.clone();
 
-    WebviewWindowBuilder::new(app, MAIN, WebviewUrl::App("index.html".into()))
+    let builder = WebviewWindowBuilder::new(app, MAIN, WebviewUrl::App("index.html".into()))
         .title("Marea")
         .inner_size(1280.0, 840.0)
         .min_inner_size(420.0, 560.0)
         .center()
+        // Opened by the system at login: start in the Dock or next to the clock, ready for notifications
+        .visible(!std::env::args().any(|arg| arg == AUTOSTART_ARG));
+
+    // macOS: no grey title bar. The page reaches the top of the window and the window buttons sit inside
+    // Marea's own top bar (the bridge makes room for them and makes that bar the place to drag the window from).
+    #[cfg(target_os = "macos")]
+    let builder = builder
+        .title_bar_style(tauri::TitleBarStyle::Overlay)
+        .hidden_title(true)
+        .traffic_light_position(tauri::LogicalPosition::new(18.0, 28.0));
+
+    builder
         .initialization_script(script)
         .zoom_hotkeys_enabled(true)
         .on_navigation(move |url| match links::on_navigation(url) {
@@ -335,6 +365,12 @@ fn on_menu<R: Runtime>(app: &AppHandle<R>, id: &str) {
         menu::ZOOM_IN => set_zoom(app, Some(1.1)),
         menu::ZOOM_OUT => set_zoom(app, Some(1.0 / 1.1)),
         menu::ZOOM_RESET => set_zoom(app, None),
+        menu::PRINT => {
+            if let Some(w) = &window {
+                let _ = w.print();
+            }
+        }
+        menu::OPEN_AT_LOGIN => toggle_open_at_login(app),
         menu::HELP => {
             let _ = app.opener().open_url("https://github.com/mareabypaperclip/marea-desktop", None::<&str>);
         }
@@ -344,6 +380,18 @@ fn on_menu<R: Runtime>(app: &AppHandle<R>, id: &str) {
             app.exit(0);
         }
         _ => {}
+    }
+}
+
+/// "Open at login" on or off, and the menu tick to match.
+fn toggle_open_at_login<R: Runtime>(app: &AppHandle<R>) {
+    let autostart = app.autolaunch();
+    let on = !autostart.is_enabled().unwrap_or(false);
+    let done = if on { autostart.enable() } else { autostart.disable() };
+    let now = autostart.is_enabled().unwrap_or(false);
+    menu::set_open_at_login(app, now);
+    if done.is_err() || now != on {
+        notify_system(app, "Marea", &t("error.open_at_login"));
     }
 }
 
@@ -377,6 +425,7 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_autostart::Builder::new().args([AUTOSTART_ARG]).app_name("Marea").build())
         .manage(Session::default())
         .manage(downloads::Downloads::default())
         .invoke_handler(tauri::generate_handler![
@@ -387,6 +436,7 @@ pub fn run() {
             connect,
             cancel_setup,
             notify,
+            locate,
             open_external
         ])
         .on_menu_event(|app, event| on_menu(app, event.id().as_ref()))

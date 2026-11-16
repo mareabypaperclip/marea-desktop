@@ -1,5 +1,19 @@
 # Changes
 
+## 0.2.0
+
+- **Notifications for new messages.** When a wave you follow gets something new and the window isn't in front,
+  a system notification shows its title and the latest text (mentions start with @). Muted waves, "mentions
+  only" and snoozed waves are respected. Coming back to the window right after one opens that wave.
+- **macOS: no more grey title bar.** Marea's top bar reaches the top of the window, with the window buttons
+  inside it, and you drag the window from it.
+- **macOS: your location works** (for the weather): the app asks the system, which shows its own permission
+  prompt the first time.
+- **macOS: camera and microphone allowed in calls.** The app now declares them, as the hardened runtime requires.
+- **Open at Login**, in the Marea menu on macOS and the menu next to the clock on Windows and Linux. Opened that
+  way, it starts with the window hidden, ready for notifications.
+- **Print** (⌘P) in the File menu on macOS.
+
 ## 0.1.1
 
 - Menus with Marea's own shortcuts. On macOS: *New Wave* (⌘N), *Compose Mail* (⇧⌘N), *Search* (⌘F), *Assistant*,

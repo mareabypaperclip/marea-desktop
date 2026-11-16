@@ -142,3 +142,6 @@ input[aria-invalid="true"] { border-color: var(--error); }
 @media (prefers-reduced-motion: reduce) {
   .spinner { animation-duration: 3s; }
 }
+
+/* The strip at the top to drag the window from (macOS has no title bar of its own) */
+.drag { position: fixed; top: 0; left: 0; right: 0; height: 28px; z-index: 10; }

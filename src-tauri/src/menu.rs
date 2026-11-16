@@ -4,8 +4,10 @@
 //! window keeps the app running so notifications keep arriving. The section keys (Ctrl+1 to Ctrl+7) are handled
 //! by the bridge there.
 
-use tauri::menu::{Menu, MenuBuilder, MenuItemBuilder};
-use tauri::{AppHandle, Runtime};
+use tauri::menu::{CheckMenuItem, CheckMenuItemBuilder, Menu, MenuBuilder, MenuItemBuilder};
+use tauri::{AppHandle, Manager, Runtime};
+
+use tauri_plugin_autostart::ManagerExt as _;
 
 use crate::actions;
 use crate::i18n::t;
@@ -20,7 +22,35 @@ pub const ZOOM_OUT: &str = "zoom_out";
 pub const ZOOM_RESET: &str = "zoom_reset";
 pub const HELP: &str = "help";
 pub const OPEN: &str = "open";
+pub const PRINT: &str = "print";
+pub const OPEN_AT_LOGIN: &str = "open_at_login";
 pub const QUIT: &str = "quit";
+
+/// The "Open at Login" ticks (app menu on macOS, tray menu elsewhere), kept to update them when it changes.
+struct LoginItems<R: Runtime>(std::sync::Mutex<Vec<CheckMenuItem<R>>>);
+
+fn open_at_login_item<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<CheckMenuItem<R>> {
+    let on = app.autolaunch().is_enabled().unwrap_or(false);
+    let item = CheckMenuItemBuilder::with_id(OPEN_AT_LOGIN, t("menu.open_at_login")).checked(on).build(app)?;
+    if app.try_state::<LoginItems<R>>().is_none() {
+        app.manage(LoginItems::<R>(std::sync::Mutex::new(Vec::new())));
+    }
+    if let Ok(mut items) = app.state::<LoginItems<R>>().0.lock() {
+        items.push(item.clone());
+    }
+    Ok(item)
+}
+
+/// Puts the tick where it belongs after turning "Open at Login" on or off.
+pub fn set_open_at_login<R: Runtime>(app: &AppHandle<R>, on: bool) {
+    if let Some(items) = app.try_state::<LoginItems<R>>() {
+        if let Ok(items) = items.0.lock() {
+            for item in items.iter() {
+                let _ = item.set_checked(on);
+            }
+        }
+    }
+}
 
 /// The macOS menu bar. Compiled everywhere, so the checks on Linux cover it too; only macOS uses it.
 #[cfg_attr(not(target_os = "macos"), allow(dead_code))]
@@ -48,6 +78,7 @@ pub fn app_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
         .item(&PredefinedMenuItem::about(app, label("menu.about").as_deref(), Some(about))?)
         .separator()
         .item(&item(actions::SETTINGS, "menu.settings", Some("CmdOrCtrl+Comma"))?)
+        .item(&open_at_login_item(app)?)
         .separator()
         .item(&item(CHECK_UPDATES, "menu.check_updates", None)?)
         .item(&item(CHANGE_SERVER, "menu.change_server", None)?)
@@ -68,6 +99,8 @@ pub fn app_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
         .separator()
         .item(&item(actions::SEARCH, "menu.search", Some("CmdOrCtrl+F"))?)
         .item(&item(actions::ASSISTANT, "menu.assistant", None)?)
+        .separator()
+        .item(&item(PRINT, "menu.print", Some("CmdOrCtrl+P"))?)
         .separator()
         .item(&PredefinedMenuItem::close_window(app, label("menu.close_window").as_deref())?)
         .build()?;
@@ -132,6 +165,7 @@ pub fn tray_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
         .separator()
         .item(&MenuItemBuilder::with_id(CHANGE_SERVER, t("menu.change_server")).build(app)?)
         .item(&MenuItemBuilder::with_id(CHECK_UPDATES, t("menu.check_updates")).build(app)?)
+        .item(&open_at_login_item(app)?)
         .separator()
         .item(&MenuItemBuilder::with_id(QUIT, t("menu.quit")).build(app)?)
         .build()

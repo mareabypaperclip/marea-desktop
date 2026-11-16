@@ -82,6 +82,8 @@
   "menu.podcasts": "Podcasts",
   "menu.notes": "Notes",
   "menu.shortcuts": "Keyboard Shortcuts",
+  "menu.open_at_login": "Open at Login",
+  "menu.print": "Print…",
   "about.copyright": "© 2026 Paperclip · AGPL-3.0 licence",
   "download.done.title": "Download complete",
   "download.done.body": "{name} is in your Downloads folder.",
@@ -102,5 +104,6 @@
   "update.err.offline": "GitHub can't be reached",
   "update.err.none": "no version has been published yet",
   "update.err.status": "GitHub answered {status}",
-  "update.err.unexpected": "unexpected answer from GitHub"
+  "update.err.unexpected": "unexpected answer from GitHub",
+  "error.open_at_login": "Couldn't change whether Marea opens at login."
 }

@@ -7,6 +7,11 @@
   <string>Marea uses the camera for video calls.</string>
   <key>NSMicrophoneUsageDescription</key>
   <string>Marea uses the microphone for calls and voice messages.</string>
+  <!-- Your location, only when Marea asks (the weather): see src/location.rs -->
+  <key>NSLocationUsageDescription</key>
+  <string>Marea uses your location only when you ask it to, for example to show your local weather.</string>
+  <key>NSLocationWhenInUseUsageDescription</key>
+  <string>Marea uses your location only when you ask it to, for example to show your local weather.</string>
   <key>CFBundleDevelopmentRegion</key>
   <string>en</string>
   <key>CFBundleLocalizations</key>

@@ -27,10 +27,12 @@ rápido y usa el motor web que ya trae tu sistema.
 
 ## Qué hace
 
-- **Una aplicación propia.** Su ventana y su icono en el Dock, la barra de tareas o el lanzador. Recuerda el tamaño
-  y la posición, y si la abres otra vez, simplemente vuelve a mostrar la ventana.
-- **Notificaciones del sistema,** con el nombre y el icono de la aplicación. Hoy cubren los recordatorios de la
-  agenda y las llamadas entrantes; las menciones y los mensajes nuevos llegarán con las próximas versiones de Marea.
+- **Una aplicación propia.** Su ventana y su icono en el Dock, la barra de tareas o el lanzador. En macOS, la
+  barra azul de Marea llega hasta arriba, con los botones de la ventana dentro. Recuerda el tamaño y la posición,
+  puede abrirse al iniciar sesión (lista, en segundo plano) y, si la abres otra vez, vuelve a mostrar la ventana.
+- **Avisos del sistema** de mensajes nuevos, menciones, recordatorios de la agenda y llamadas, con el nombre y el
+  icono de la aplicación, cuando la ventana no está delante. Respeta lo que hayas elegido en cada wave
+  (silenciada, solo menciones, pospuesta), y si vuelves a la ventana justo después de un aviso, abre esa wave.
 - **Los pendientes en el icono:** un número en el icono del Dock en macOS y en el botón de la barra de tareas en
   Windows (en Linux, donde tu escritorio lo muestre).
 - **Siempre a mano.** Al cerrar la ventana, Marea sigue abierta en el Dock (macOS) o junto al reloj (Windows y
@@ -39,6 +41,7 @@ rápido y usa el motor web que ya trae tu sistema.
   Los enlaces a otras webs se abren en tu navegador de siempre; entrar con Google o Microsoft se queda dentro.
 - **Una pantalla tranquila sin conexión.** Si se va la red o el servidor, te lo dice, lo reintenta sola y te vuelve
   a meter en cuanto puede.
+- **Cámara, micrófono y ubicación** para las llamadas y el tiempo, siempre con el permiso de tu sistema.
 - **Habla tu idioma:** español, inglés, francés y catalán, según tu sistema.
 - **Atajos a toda Marea.** En macOS, la barra de menús tiene *Nueva wave* (<kbd>⌘</kbd><kbd>N</kbd>), *Redactar
   correo* (<kbd>⇧</kbd><kbd>⌘</kbd><kbd>N</kbd>), *Buscar* (<kbd>⌘</kbd><kbd>F</kbd>), el Asistente y un menú *Ir*
@@ -92,9 +95,10 @@ servidor…* en macOS o el icono junto al reloj en Windows y Linux.
   pública de GitHub. No hay analíticas, ni telemetría, ni cuentas nuestras.
 - **Solo https.** Rechaza direcciones sin https (salvo `localhost`, para desarrollo) y servidores que redirigen a
   otro sitio.
-- **Los permisos mínimos.** Tu Marea puede pedirle a la aplicación exactamente dos cosas: *muestra esta
-  notificación* y *abre este enlace en el navegador*. Se le conceden a su dirección exacta al conectar, y a nada
-  más. Otras webs no los tienen, y nada puede leer tus archivos.
+- **Los permisos mínimos.** Tu Marea puede pedirle a la aplicación muy pocas cosas: *muestra este aviso*, *abre
+  este enlace en el navegador* y, en macOS, *¿dónde estoy?* (con el aviso de permiso del propio sistema) y
+  *mueve la ventana* (desde su barra de arriba). Se le conceden a su dirección exacta al conectar, y a nada más.
+  Otras webs no los tienen, y nada puede leer tus archivos.
 - **Tus datos se quedan en Marea.** La aplicación solo guarda la dirección del servidor y la posición de la
   ventana. Tu sesión vive en el motor web del sistema, como en un navegador.
 - **Código abierto** con licencia AGPL, compilado a la vista de todos por

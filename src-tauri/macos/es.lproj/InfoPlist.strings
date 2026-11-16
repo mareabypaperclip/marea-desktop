@@ -1,2 +1,4 @@
 "NSCameraUsageDescription" = "Marea usa la cámara en las videollamadas.";
 "NSMicrophoneUsageDescription" = "Marea usa el micrófono en las llamadas y los mensajes de voz.";
+"NSLocationUsageDescription" = "Marea usa tu ubicación solo cuando se lo pides, por ejemplo para mostrarte el tiempo donde estás.";
+"NSLocationWhenInUseUsageDescription" = "Marea usa tu ubicación solo cuando se lo pides, por ejemplo para mostrarte el tiempo donde estás.";
