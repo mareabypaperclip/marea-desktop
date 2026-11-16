@@ -1,0 +1,50 @@
+name: Bug report
+description: Something in the desktop app doesn't work as it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for reporting it. Please don't include passwords, private messages or your server's address if it's private.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open the app
+        2. …
+  - type: dropdown
+    id: system
+    attributes:
+      label: System
+      options: [macOS, Windows 11, Windows 10, Linux (deb), Linux (rpm), Linux (AppImage)]
+    validations:
+      required: true
+  - type: input
+    id: system_version
+    attributes:
+      label: System version
+      placeholder: macOS 15.1, Windows 11 24H2, Ubuntu 24.04…
+  - type: input
+    id: app_version
+    attributes:
+      label: App version
+      description: In About Marea on macOS; on Windows and Linux, in your system's list of installed apps.
+      placeholder: 0.1.0
+    validations:
+      required: true
+  - type: dropdown
+    id: browser
+    attributes:
+      label: Does it also happen in a browser?
+      options: ["No, only in the app", "Yes (then it's probably a Marea issue)", "I haven't tried"]
+  - type: textarea
+    id: extra
+    attributes:
+      label: Screenshots or anything else

@@ -1,0 +1,21 @@
+name: Idea or request
+description: Something the desktop app could do better.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What would you like to do?
+      description: Describe the situation and what gets in the way today.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: How could the app help?
+  - type: dropdown
+    id: system
+    attributes:
+      label: Which systems does it apply to?
+      multiple: true
+      options: [macOS, Windows, Linux, All]

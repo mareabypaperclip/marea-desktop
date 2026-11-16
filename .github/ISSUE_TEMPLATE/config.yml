@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security problem
+    url: https://github.com/mareabypaperclip/marea-desktop/security/advisories/new
+    about: Report vulnerabilities privately, please.
+  - name: Problem in Marea itself
+    url: https://github.com/mareabypaperclip/marea/issues
+    about: If it also happens in a browser, it belongs to the Marea server or web app.

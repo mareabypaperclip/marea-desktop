@@ -70,3 +70,10 @@ the main repository (`http://localhost:8090/dev/`) works.
   signing). Password + 2FA code works.
 - **Screen sharing** in calls depends on each webview; untested.
 - **Clicking a notification** brings the app forward on macOS; it doesn't open the related wave yet.
+
+## Repository images
+
+`docs/banner.png` (also the repository's social preview, 1280×640) and the `docs/screenshots/*-framed.png` images
+were made from small HTML pages rendered with Playwright, using the Inter font from the Marea repository and
+screenshots of the app connected to a demo Marea named "Estudio Paperclip". The window frame in them is a neutral
+drawing, not a real title bar. Retake the screenshots when the app or Marea changes visibly.
