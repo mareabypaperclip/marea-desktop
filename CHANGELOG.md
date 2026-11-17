@@ -1,5 +1,14 @@
 # Changes
 
+## 0.2.2
+
+- **Checking for updates works on any connection.** The app now finds the latest version through the address
+  GitHub's own website uses, which has no request limit. Before, it only asked GitHub's API, which answers
+  "403" when a connection has asked too often, and the app said it couldn't check.
+
+**Security:** nothing changes in what the app or your Marea may do. The app still only asks GitHub, over https,
+which version is the latest.
+
 ## 0.2.1
 
 - **Unread mail on the icon too.** The number on the Dock icon (and the taskbar button on Windows) now adds up

@@ -83,23 +83,62 @@ async fn check<R: Runtime>(app: &AppHandle<R>, asked: bool) {
     }
 }
 
+/// The newest published version. First from the address GitHub's website itself redirects to
+/// (`…/releases/latest` → `…/releases/tag/v1.2.3`), which has no request limit; then, if that doesn't answer as
+/// expected, from GitHub's API, which only allows 60 requests an hour from each internet connection without an
+/// account (0.2.1 asked only the API, and a shared or busy connection got "403").
 async fn latest() -> Result<Release, String> {
-    let client = reqwest::Client::builder()
+    match from_redirect().await {
+        Some(release) => Ok(release),
+        None => from_api().await,
+    }
+}
+
+fn client(redirects: bool) -> Result<reqwest::Client, String> {
+    let policy = if redirects { reqwest::redirect::Policy::default() } else { reqwest::redirect::Policy::none() };
+    reqwest::Client::builder()
         .user_agent(concat!("MareaDesktop/", env!("CARGO_PKG_VERSION")))
         .timeout(Duration::from_secs(10))
+        .redirect(policy)
         .build()
-        .map_err(|e| e.to_string())?;
-    let response = client
+        .map_err(|e| e.to_string())
+}
+
+async fn from_redirect() -> Option<Release> {
+    let response = client(false).ok()?.head(RELEASES).send().await.ok()?;
+    if !response.status().is_redirection() {
+        return None;
+    }
+    let location = response.headers().get(reqwest::header::LOCATION)?.to_str().ok()?;
+    let tag = tag_from_location(location)?;
+    Some(Release { tag_name: tag, html_url: Some(location.to_string()), draft: None, prerelease: None })
+}
+
+/// "https://github.com/…/releases/tag/v1.2.3" → "v1.2.3". With no release yet GitHub redirects to the list of
+/// releases instead: `None`.
+fn tag_from_location(location: &str) -> Option<String> {
+    let (repository, tag) = location.split_once("/releases/tag/")?;
+    let tag = tag.split(['?', '#']).next()?.trim_end_matches('/');
+    let ours = repository.ends_with("github.com/mareabypaperclip/marea-desktop");
+    (ours && version(tag).is_some()).then(|| tag.to_string())
+}
+
+async fn from_api() -> Result<Release, String> {
+    let response = client(true)?
         .get(LATEST)
         .header("Accept", "application/vnd.github+json")
         .send()
         .await
         .map_err(|_| t("update.err.offline"))?;
-    if response.status().as_u16() == 404 {
+    let status = response.status().as_u16();
+    if status == 404 {
         return Err(t("update.err.none"));
     }
+    if status == 403 || status == 429 {
+        return Err(t("update.err.busy"));
+    }
     if !response.status().is_success() {
-        return Err(tf("update.err.status", &[("status", &response.status().as_u16().to_string())]));
+        return Err(tf("update.err.status", &[("status", &status.to_string())]));
     }
     let release: Release = response.json().await.map_err(|_| t("update.err.unexpected"))?;
     if release.draft.unwrap_or(false) || release.prerelease.unwrap_or(false) {
@@ -143,7 +182,17 @@ fn version(text: &str) -> Option<(u64, u64, u64)> {
 
 #[cfg(test)]
 mod tests {
-    use super::version;
+    use super::{tag_from_location, version};
+
+    #[test]
+    fn reads_the_tag_from_the_redirect() {
+        let at = |path: &str| format!("https://github.com/mareabypaperclip/marea-desktop/releases{path}");
+        assert_eq!(tag_from_location(&at("/tag/v0.2.2")).as_deref(), Some("v0.2.2"));
+        assert_eq!(tag_from_location(&at("/tag/v1.0.0/")).as_deref(), Some("v1.0.0"));
+        assert_eq!(tag_from_location(&at("")), None, "no release yet: the list of releases");
+        assert_eq!(tag_from_location(&at("/tag/nightly")), None);
+        assert_eq!(tag_from_location("https://github.com/someone/else/releases/tag/v9.9.9"), None);
+    }
 
     #[test]
     fn compares_versions() {
