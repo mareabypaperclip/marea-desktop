@@ -104,6 +104,7 @@
   "update.err.offline": "no hi ha connexió amb GitHub",
   "update.err.none": "encara no s'ha publicat cap versió",
   "update.err.status": "GitHub ha respost {status}",
+  "update.err.busy": "GitHub no respon aquest tipus de consultes des de la teva connexió de moment. Torna-ho a provar d'aquí a una hora o descarrega-la des de la pàgina de versions",
   "update.err.unexpected": "resposta inesperada de GitHub",
   "error.open_at_login": "No s'ha pogut canviar si Marea s'obre en iniciar la sessió."
 }

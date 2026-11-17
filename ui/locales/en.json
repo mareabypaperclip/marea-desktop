@@ -104,6 +104,7 @@
   "update.err.offline": "GitHub can't be reached",
   "update.err.none": "no version has been published yet",
   "update.err.status": "GitHub answered {status}",
+  "update.err.busy": "GitHub isn't answering this kind of question from your connection for now. Try again in an hour, or download it from the releases page",
   "update.err.unexpected": "unexpected answer from GitHub",
   "error.open_at_login": "Couldn't change whether Marea opens at login."
 }

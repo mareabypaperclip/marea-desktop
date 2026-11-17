@@ -104,6 +104,7 @@
   "update.err.offline": "GitHub est injoignable",
   "update.err.none": "aucune version n'a encore été publiée",
   "update.err.status": "GitHub a répondu {status}",
+  "update.err.busy": "GitHub ne répond pas à ce type de demande depuis votre connexion pour le moment. Réessayez dans une heure ou téléchargez-la depuis la page des versions",
   "update.err.unexpected": "réponse inattendue de GitHub",
   "error.open_at_login": "Impossible de changer l'ouverture de Marea à l'ouverture de session."
 }

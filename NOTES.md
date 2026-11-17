@@ -75,7 +75,9 @@ What a future session needs to know to keep working on Marea for desktop. Read i
   Basque, Asturian and Aragonese systems get Spanish; anything else unknown gets English. The Windows installer
   is in English, Spanish and French (Tauri's NSIS templates have no Catalan).
 - **Updates:** `updates.rs` checks the latest GitHub release at launch and every 12 hours and offers the download
-  page. Automatic installation (`tauri-plugin-updater`) needs a signing key stored as repository secrets
+  page. It reads the tag from the redirect of `github.com/…/releases/latest` (no request limit) and only falls
+  back to the API, which allows 60 requests an hour per connection without an account: 0.2.1 used only the API
+  and got "403" on a busy connection. Automatic installation (`tauri-plugin-updater`) needs a signing key stored as repository secrets
   (`TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`). Agent sessions can't set GitHub secrets,
   and the private key must never travel through a chat, so the owner has to generate it on his computer
   (`npx tauri signer generate -w ~/.tauri/marea.key`), paste both values into *Settings → Secrets and variables →
