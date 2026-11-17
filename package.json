@@ -1,7 +1,7 @@
 {
   "name": "marea-desktop",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Marea para Mac, Windows y Linux",
   "license": "AGPL-3.0-or-later",
   "scripts": {

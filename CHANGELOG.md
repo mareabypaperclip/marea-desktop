@@ -1,5 +1,16 @@
 # Changes
 
+## 0.2.1
+
+- **Unread mail on the icon too.** The number on the Dock icon (and the taskbar button on Windows) now adds up
+  unread waves and unread mail, the same two numbers next to «Waves» and «Correo» in Marea's menu. Before, it
+  only counted waves, so with only unread mail there was no number at all. It keeps up while the window is hidden.
+- **Drag and drop works again.** Moving mail onto a folder, dropping files into an email or a transfer and every
+  other drag inside Marea now reach Marea. On macOS and Windows the app was catching every drag over the window.
+
+**Security:** the Marea you connect to gets one more permission, *set the number on the app's icon*, which can
+only show a number. Drag and drop goes to the Marea page, as in a browser; the app itself never receives files.
+
 ## 0.2.0
 
 - **Notifications for new messages.** When a wave you follow gets something new and the window isn't in front,

@@ -7,12 +7,13 @@
 //   has these keys).
 // - Notifies new messages while the window isn't in front: Marea itself only does it for reminders and calls,
 //   because web push doesn't exist inside apps. Coming back to the window right after one opens that wave.
+// - Puts the number of unread waves and mail on the app's icon (the Dock, the taskbar).
 // - macOS: Marea's top bar reaches the top of the window, with room for the window buttons, and the window is
 //   dragged from it; and your location comes from the system (the web engine never gives it inside apps).
 //
-// It can only ask the app for a few harmless things: show a notification, open a link outside and, on macOS,
-// your location (behind the system's own prompt) and moving the window. No reading files or touching the
-// computer: the app's permissions allow nothing more.
+// It can only ask the app for a few harmless things: show a notification, open a link outside, put a number on
+// the app's icon and, on macOS, your location (behind the system's own prompt) and moving the window. No reading
+// files or touching the computer: the app's permissions allow nothing more.
 (function () {
   'use strict';
   if (window.__MAREA_DESKTOP__) return;
@@ -92,23 +93,90 @@
     true
   );
 
+  // ── The number on the app's icon ──
+  // Unread waves plus unread mail: the same two numbers Marea shows next to «Waves» and «Correo» in its menu. While
+  // the window is on screen they come from Marea itself (the waves from the page title, "(3) Marea"; the mail from
+  // its menu, each time Marea counts it). While the window is hidden Marea stops asking its server, so the bridge
+  // asks instead: the waves with the request it already makes for notifications, the mail every 5 minutes (as
+  // often as Marea itself). Signed out, or on a page that isn't Marea, no number.
+  var waiting = { waves: 0, mail: 0 };
+  var onIcon = -1;
+  function showWaiting() {
+    var n = document.querySelector('.shell') ? waiting.waves + waiting.mail : 0;
+    if (n === onIcon) return;
+    onIcon = n;
+    invoke('set_badge', { count: n }).catch(function () {
+      onIcon = -1;
+    });
+  }
+  function apiUrl(action) {
+    return new URL('api.php?a=' + action, location.href).href;
+  }
+  function wavesFromTitle() {
+    if (document.visibilityState !== 'visible') return; // hidden, Marea's title may be old: the bridge asks
+    var m = /^\s*\((\d+)\+?\)/.exec(document.title);
+    waiting.waves = m ? Number(m[1]) : 0;
+    showWaiting();
+  }
+  function mailFromMenu() {
+    var badge = document.querySelector('a[data-nav="mail"]:not(.sub) .badge');
+    if (!badge) return;
+    waiting.mail = badge.hidden ? 0 : parseInt(badge.textContent, 10) || 0; // "99+" counts as 99, like the menu
+    showWaiting();
+  }
+  function wavesWhileHidden(waves) {
+    if (document.visibilityState === 'visible') return;
+    waiting.waves = waves.filter(function (w) {
+      return w.unread && !w.trashed && !w.archived;
+    }).length;
+    showWaiting();
+  }
+  function mailWhileHidden() {
+    if (document.visibilityState === 'visible' || !document.querySelector('.shell')) return;
+    fetch(apiUrl('panel_mail'), { credentials: 'same-origin' })
+      .then(function (r) {
+        return r.ok ? r.json() : null;
+      })
+      .then(function (data) {
+        if (!data || !data.set || !Array.isArray(data.boxes)) return;
+        waiting.mail = data.boxes.reduce(function (sum, box) {
+          return sum + (Number(box.unseen) || 0);
+        }, 0);
+        showWaiting();
+      })
+      .catch(function () {});
+  }
+  document.addEventListener('marea:mailcount', function () {
+    setTimeout(mailFromMenu, 0); // Marea fires it just before painting its menu
+  });
+  var watchTitle = function () {
+    wavesFromTitle();
+    new MutationObserver(wavesFromTitle).observe(document.head, { childList: true, subtree: true, characterData: true });
+  };
+  if (document.head) watchTitle();
+  else document.addEventListener('DOMContentLoaded', watchTitle);
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState !== 'visible') return;
+    wavesFromTitle();
+    mailFromMenu();
+  });
+  setInterval(mailWhileHidden, 300000);
+
   // ── New messages, as system notifications ──
   // Every 45 s, the same list of waves Marea's inbox shows. Only waves with something unread that changed since
   // the last look, never while you're looking at the window, and respecting each wave's own setting (muted,
   // mentions only, snoozed). The first look only takes note of what's there.
   var known = null; // wave id -> last "updated" seen
   var lastShown = null; // { hash, at } of the latest notification
-  function inboxUrl() {
-    return new URL('api.php?a=inbox', location.href).href;
-  }
   function lookForNews() {
     if (!document.querySelector('.shell')) return; // only in Marea itself, signed in
-    fetch(inboxUrl(), { credentials: 'same-origin' })
+    fetch(apiUrl('inbox'), { credentials: 'same-origin' })
       .then(function (r) {
         return r.ok ? r.json() : null;
       })
       .then(function (data) {
         if (!data || !Array.isArray(data.waves)) return;
+        wavesWhileHidden(data.waves);
         var first = known === null;
         if (first) known = {};
         var looking = document.visibilityState === 'visible' && document.hasFocus();

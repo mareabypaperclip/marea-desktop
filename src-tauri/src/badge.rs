@@ -1,23 +1,17 @@
 //! The pending count on the app icon (macOS Dock, Windows taskbar, Linux launcher).
 //!
-//! Marea already puts that number in the page title ("(3) Marea"): the app reads it from there, without changing
-//! Marea.
+//! The same two numbers Marea shows next to «Waves» and «Correo» in its menu, added up: unread waves and unread
+//! mail. The bridge counts them (see bridge.js, "The number on the app's icon") and calls `set_badge`; this only
+//! puts the number on the icon. Until 0.2.0 it was read from the page title ("(3) Marea"), which only has the waves.
 
 use tauri::{Runtime, WebviewWindow};
 
-/// "(3) Marea" → 3. Any other title → 0.
-pub fn count_from_title(title: &str) -> u32 {
-    let Some(rest) = title.trim_start().strip_prefix('(') else {
-        return 0;
-    };
-    let Some(end) = rest.find(')') else {
-        return 0;
-    };
-    rest[..end].trim().trim_end_matches('+').parse().unwrap_or(0)
-}
+/// Bigger numbers don't fit on the icon and say nothing more.
+pub const MAX: u32 = 9_999;
 
 /// Sets (or clears, with 0) the number on the icon.
 pub fn apply<R: Runtime>(window: &WebviewWindow<R>, count: u32) {
+    let count = count.min(MAX);
     #[cfg(not(target_os = "windows"))]
     {
         let _ = window.set_badge_count(if count > 0 { Some(i64::from(count)) } else { None });
@@ -49,15 +43,12 @@ fn overlay(count: u32) -> Option<tauri::image::Image<'static>> {
 
 #[cfg(test)]
 mod tests {
-    use super::count_from_title;
-
+    #[cfg(target_os = "windows")]
     #[test]
-    fn reads_the_count() {
-        assert_eq!(count_from_title("(3) Marea"), 3);
-        assert_eq!(count_from_title("(120) Paperclip"), 120);
-        assert_eq!(count_from_title("Marea"), 0);
-        assert_eq!(count_from_title("(unread) Marea"), 0);
-        assert_eq!(count_from_title("File transfer · Marea"), 0);
-        assert_eq!(count_from_title(""), 0);
+    fn every_overlay_loads() {
+        for count in [1, 5, 9, 10, super::MAX] {
+            assert!(super::overlay(count).is_some(), "overlay for {count}");
+        }
+        assert!(super::overlay(0).is_none());
     }
 }

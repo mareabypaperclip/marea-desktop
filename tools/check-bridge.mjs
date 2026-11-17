@@ -1,5 +1,6 @@
 // Runs the app's bridge (as macOS) inside the test Marea with a fake app behind it, and checks the new parts:
-// notifications of new messages, opening that wave on focus, the title bar room and drag region, and location.
+// notifications of new messages, opening that wave on focus, the title bar room and drag region, location, and
+// the number on the app's icon (unread waves and mail, with the window on screen and hidden).
 //
 // Needs the Marea repository next to this one (or MAREA_REPO) with its test install running, and Playwright.
 // It changes wave 4 of the test install (marks it unread) and puts it back. Run: node tools/check-bridge.mjs
@@ -16,8 +17,10 @@ const { chromium } = await import(process.env.PLAYWRIGHT || '/opt/npm-tools/node
 const bridge = fs.readFileSync(path.join(here, '..', 'src-tauri', 'src', 'bridge.js'), 'utf8')
   .replace(/__PLATFORM__/g, 'macos').replace(/__VERSION__/g, '0.2.0')
   .replace('setInterval(lookForNews, 45000)', 'setInterval(lookForNews, 2000)')
-  .replace('setTimeout(lookForNews, 5000)', 'setTimeout(lookForNews, 1500)');
-const fake = `window.__calls = [];
+  .replace('setTimeout(lookForNews, 5000)', 'setTimeout(lookForNews, 1500)')
+  .replace('setInterval(mailWhileHidden, 300000)', 'setInterval(mailWhileHidden, 2000)');
+const fake = `window.__calls = []; window.__fetched = [];
+{ const f = window.fetch.bind(window); window.fetch = (u, o) => { window.__fetched.push(String(u)); return f(u, o); }; }
 window.__TAURI_INTERNALS__ = { invoke: (cmd, args) => { window.__calls.push([cmd, args]);
   if (cmd === 'locate') return Promise.resolve({ latitude: 39.4699, longitude: -0.3763, accuracy: 1000 });
   return Promise.resolve(null); } };`;
@@ -47,6 +50,25 @@ const notes = await a.evaluate(() => window.__calls.filter((c) => c[0] === 'noti
 ok(notes.length === 1 && notes[0].title === 'Ideas para el boletín de diciembre', 'new message notified once: ' + JSON.stringify(notes));
 await a.waitForTimeout(2500);
 ok((await a.evaluate(() => window.__calls.filter((c) => c[0] === 'notify').length)) === 1, 'not notified again');
+
+// The number on the app's icon: unread waves (Marea's title) plus unread mail (Marea's menu); the test mailbox has 2
+const icon = () => a.evaluate(() => { const c = window.__calls.filter((x) => x[0] === 'set_badge'); return c.length ? c[c.length - 1][1].count : null; });
+const counts = () => a.evaluate(() => {
+  const m = /^\((\d+)\)/.exec(document.title); const b = document.querySelector('a[data-nav="mail"]:not(.sub) .badge');
+  return { waves: m ? +m[1] : 0, mail: b && !b.hidden ? parseInt(b.textContent, 10) || 0 : 0 };
+});
+for (let i = 0; i < 20 && (await counts()).waves !== 1; i++) await a.waitForTimeout(500);
+const seen = await counts();
+ok(seen.waves === 1 && seen.mail === 2 && (await icon()) === 3, 'icon: 1 unread wave + 2 unread mails = 3 ' + JSON.stringify(seen));
+// Hidden window: Marea stops asking its server, the bridge asks (wave 4 read elsewhere meanwhile)
+await a.evaluate(() => { window.__fetched.length = 0; Object.defineProperty(document, 'visibilityState', { get: () => 'hidden', configurable: true }); });
+execSync(`mysql oladev -e "UPDATE marea_participants p JOIN marea_waves w ON w.id = p.wave_id SET p.last_read_seq = w.seq WHERE p.wave_id = 4 AND p.user_id = 1"`);
+for (let i = 0; i < 20 && (await icon()) !== 2; i++) await a.waitForTimeout(500);
+ok((await icon()) === 2, 'icon while hidden follows the server: 0 waves + 2 mails = 2');
+ok((await a.evaluate(() => window.__fetched.some((u) => u.includes('a=panel_mail')))), 'while hidden, the bridge itself asks for the unread mail');
+ok((await a.evaluate(() => window.__calls.filter((x) => x[0] === 'set_badge').every((x) => Number.isInteger(x[1].count) && x[1].count >= 0))), 'icon counts are whole numbers');
+await a.evaluate(() => { delete document.visibilityState; document.dispatchEvent(new Event('visibilitychange')); });
+
 // Coming back to the window opens it
 await a.evaluate(() => window.dispatchEvent(new Event('focus')));
 await a.waitForTimeout(800);

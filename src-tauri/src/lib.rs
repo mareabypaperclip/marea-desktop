@@ -93,9 +93,9 @@ fn enter<R: Runtime>(app: &AppHandle<R>, base: &Url) -> Result<(), String> {
 /// The argument the app gets when the system opens it at login: it starts with the window hidden.
 const AUTOSTART_ARG: &str = "--autostart";
 
-/// Lets that Marea (and only that one) send notifications and open links outside. On macOS, also ask for your
-/// location (Core Location shows its own prompt) and move the window by its top bar, which reaches the top of
-/// the window there (see NOTES.md, "Permissions").
+/// Lets that Marea (and only that one) send notifications, open links outside and put the number of unread waves
+/// and mail on the app's icon. On macOS, also ask for your location (Core Location shows its own prompt) and move
+/// the window by its top bar, which reaches the top of the window there (see NOTES.md, "Permissions").
 fn grant<R: Runtime>(app: &AppHandle<R>, origin: &str) -> Result<(), String> {
     let session = app.state::<Session>();
     let mut granted = session.granted.lock().map_err(|_| t("error.internal"))?;
@@ -107,7 +107,8 @@ fn grant<R: Runtime>(app: &AppHandle<R>, origin: &str) -> Result<(), String> {
         .local(false)
         .window(MAIN)
         .permission("allow-notify")
-        .permission("allow-open-external");
+        .permission("allow-open-external")
+        .permission("allow-set-badge");
     #[cfg(target_os = "macos")]
     let capability = capability
         .permission("allow-locate")
@@ -146,6 +147,7 @@ fn local_url(path: &str) -> Url {
 fn show_setup<R: Runtime>(app: &AppHandle<R>) {
     show_main(app);
     if let Some(window) = app.get_webview_window(MAIN) {
+        badge::apply(&window, 0); // the number belonged to the Marea you're leaving
         let _ = window.navigate(local_url("index.html?change"));
     }
 }
@@ -252,6 +254,14 @@ async fn locate(app: AppHandle) -> Result<location::Position, String> {
     location::locate(&app).await.map_err(String::from)
 }
 
+/// The number on the app's icon: unread waves and mail, counted by the bridge (see badge.rs).
+#[tauri::command]
+fn set_badge(window: WebviewWindow, count: u32) {
+    if window.label() == MAIN {
+        badge::apply(&window, count);
+    }
+}
+
 #[tauri::command]
 fn open_external(app: AppHandle, url: String) -> Result<(), String> {
     let url = links::external_ok(&url).ok_or_else(|| t("error.link"))?;
@@ -285,6 +295,9 @@ fn build_main<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<WebviewWindow<R>>
 
     builder
         .initialization_script(script)
+        // Drag and drop belongs to Marea: mail onto a folder, files into an email or a transfer. Tauri's own
+        // handler would take every drag over the window (for file drops into the app) and Marea would never see it.
+        .disable_drag_drop_handler()
         .zoom_hotkeys_enabled(true)
         .on_navigation(move |url| match links::on_navigation(url) {
             links::Decision::Allow => true,
@@ -313,7 +326,6 @@ fn build_main<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<WebviewWindow<R>>
         .on_document_title_changed(|window, title| {
             let shown = if title.trim().is_empty() { "Marea" } else { title.as_str() };
             let _ = window.set_title(shown);
-            badge::apply(&window, badge::count_from_title(&title));
             #[cfg(not(target_os = "macos"))]
             if let Some(tray) = window.app_handle().tray_by_id(TRAY) {
                 let _ = tray.set_tooltip(Some(shown));
@@ -437,6 +449,7 @@ pub fn run() {
             cancel_setup,
             notify,
             locate,
+            set_badge,
             open_external
         ])
         .on_menu_event(|app, event| on_menu(app, event.id().as_ref()))
