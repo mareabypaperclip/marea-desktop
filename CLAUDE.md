@@ -15,8 +15,9 @@ Isacar (Paperclip). Read `NOTES.md` before changing anything.
   `ui/locales/{en,es,fr,ca}.json` (all four, same keys and placeholders: `cargo test` checks it).
 - His design preferences: buttons with one style, right-aligned in forms; nothing duplicated on screen; no logos
   or icons assumed (Marea's own logo is fine; a company's logo must be asked for).
-- **Security first:** the remote Marea only gets `allow-notify` and `allow-open-external`; never widen that
-  without a clear reason written in `NOTES.md`. Never put keys or passwords in the repository or in the chat.
+- **Security first:** the remote Marea only gets `allow-notify`, `allow-open-external` and `allow-set-badge` (plus
+  the macOS extras listed in `NOTES.md`); never widen that without a clear reason written in `NOTES.md`. Never put
+  keys or passwords in the repository or in the chat.
   Note the security impact of each change in the release notes.
 - Before committing: `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings` and `cargo test` (in
   `src-tauri/`), and look at the app running (see *Testing locally* in `NOTES.md`), with screenshots for Isacar.

@@ -32,8 +32,8 @@ and adds what a browser tab can't. It's small, it starts fast and it uses the we
 - **Notifications from the system** for new messages, mentions, calendar reminders and calls, with the app's
   name and icon, while the window isn't in front. Each wave's own setting (muted, mentions only, snoozed) is
   respected, and coming back to the window right after one opens that wave.
-- **The pending count on the icon:** a number on the Dock icon on macOS and on the taskbar button on Windows (on
-  Linux, wherever your desktop shows it).
+- **The pending count on the icon:** unread waves and unread mail, as a number on the Dock icon on macOS and on
+  the taskbar button on Windows (on Linux, wherever your desktop shows it).
 - **Stays reachable.** Closing the window keeps Marea running in the Dock (macOS) or next to the clock (Windows and
   Linux), so reminders and calls still reach you. *Quit Marea* closes it for real.
 - **Files and links where they belong.** Downloads go straight to your Downloads folder with a notification when
@@ -95,9 +95,9 @@ on macOS or the icon next to the clock on Windows and Linux.
 - **https only.** The app refuses addresses without https (except `localhost`, for development) and refuses
   servers that redirect somewhere else.
 - **The smallest set of permissions.** Your Marea can ask the app for very few things: *show this
-  notification*, *open this link in the browser* and, on macOS, *where am I?* (behind the system's own prompt)
-  and *move the window* (from its top bar). They are granted to its exact address when you connect, and to
-  nothing else. Other sites never get them, and nothing can read your files.
+  notification*, *open this link in the browser*, *put this number on the icon* and, on macOS, *where am I?*
+  (behind the system's own prompt) and *move the window* (from its top bar). They are granted to its exact
+  address when you connect, and to nothing else. Other sites never get them, and nothing can read your files.
 - **Your data stays in Marea.** The app keeps only the server address and the window position. Your session
   lives in the system web engine, as it would in a browser.
 - **Open source** under the AGPL, built in public by [GitHub Actions](.github/workflows/release.yml) from this

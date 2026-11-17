@@ -28,8 +28,8 @@ in a browser, it belongs to [Marea](https://github.com/mareabypaperclip/marea/is
 - Code, comments and commit messages in English. Text for users never goes in code: it goes in the locale files,
   in all languages.
 - Read [NOTES.md](NOTES.md) first: it explains how the app is put together and why.
-- **Security first.** Don't widen what the remote Marea can call (`allow-notify` and `allow-open-external`) without a
-  strong reason explained in `NOTES.md` and in the pull request.
+- **Security first.** Don't widen what the remote Marea can call (`allow-notify`, `allow-open-external` and
+  `allow-set-badge`) without a strong reason explained in `NOTES.md` and in the pull request.
 - Before opening a pull request, in `src-tauri/`:
 
   ```sh

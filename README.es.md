@@ -33,8 +33,8 @@ rápido y usa el motor web que ya trae tu sistema.
 - **Avisos del sistema** de mensajes nuevos, menciones, recordatorios de la agenda y llamadas, con el nombre y el
   icono de la aplicación, cuando la ventana no está delante. Respeta lo que hayas elegido en cada wave
   (silenciada, solo menciones, pospuesta), y si vuelves a la ventana justo después de un aviso, abre esa wave.
-- **Los pendientes en el icono:** un número en el icono del Dock en macOS y en el botón de la barra de tareas en
-  Windows (en Linux, donde tu escritorio lo muestre).
+- **Los pendientes en el icono:** las waves y los correos sin leer, como un número en el icono del Dock en macOS y
+  en el botón de la barra de tareas en Windows (en Linux, donde tu escritorio lo muestre).
 - **Siempre a mano.** Al cerrar la ventana, Marea sigue abierta en el Dock (macOS) o junto al reloj (Windows y
   Linux), y los recordatorios y las llamadas te siguen llegando. *Salir de Marea* la cierra del todo.
 - **Archivos y enlaces en su sitio.** Las descargas van directas a tu carpeta de Descargas, con un aviso al terminar.
@@ -96,9 +96,9 @@ servidor…* en macOS o el icono junto al reloj en Windows y Linux.
 - **Solo https.** Rechaza direcciones sin https (salvo `localhost`, para desarrollo) y servidores que redirigen a
   otro sitio.
 - **Los permisos mínimos.** Tu Marea puede pedirle a la aplicación muy pocas cosas: *muestra este aviso*, *abre
-  este enlace en el navegador* y, en macOS, *¿dónde estoy?* (con el aviso de permiso del propio sistema) y
-  *mueve la ventana* (desde su barra de arriba). Se le conceden a su dirección exacta al conectar, y a nada más.
-  Otras webs no los tienen, y nada puede leer tus archivos.
+  este enlace en el navegador*, *pon este número en el icono* y, en macOS, *¿dónde estoy?* (con el aviso de
+  permiso del propio sistema) y *mueve la ventana* (desde su barra de arriba). Se le conceden a su dirección
+  exacta al conectar, y a nada más. Otras webs no los tienen, y nada puede leer tus archivos.
 - **Tus datos se quedan en Marea.** La aplicación solo guarda la dirección del servidor y la posición de la
   ventana. Tu sesión vive en el motor web del sistema, como en un navegador.
 - **Código abierto** con licencia AGPL, compilado a la vista de todos por

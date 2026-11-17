@@ -12,8 +12,11 @@ What a future session needs to know to keep working on Marea for desktop. Read i
 - **Permissions (capabilities):**
   - `capabilities/local.json`: the connection screen may call `app_info`, `start`, `check_server`, `connect`,
     `retry`, `cancel_setup` and `open_external`.
-  - At runtime, `grant()` in `lib.rs` adds a capability for `https://<server>/*` with only `allow-notify` and
-    `allow-open-external`, and on macOS three more, each with its reason:
+  - At runtime, `grant()` in `lib.rs` adds a capability for `https://<server>/*` with only `allow-notify`,
+    `allow-open-external` and `allow-set-badge`, and on macOS three more, each with its reason:
+    - `allow-set-badge` (0.2.1): the number on the app's icon. Marea's page title only has the unread waves
+      ("(3) Marea"), and the unread mail is just as pending, so the bridge counts both and hands the app one
+      whole number. The worst a page could do with it is show a wrong number on the icon.
     - `allow-locate`: WKWebView never gives pages your location inside apps, so the bridge asks the app, which
       asks Core Location (`location.rs`). macOS shows its own permission prompt; kilometre accuracy only.
     - `core:window:allow-start-dragging` and `core:window:allow-internal-toggle-maximize`: with the title bar
@@ -24,8 +27,19 @@ What a future session needs to know to keep working on Marea for desktop. Read i
 - **The bridge** (`src-tauri/src/bridge.js`, injected before every page): replaces `window.Notification` so
   Marea's standard notifications become system notifications, sends clicks on links to other sites to the
   browser, and exposes `window.__MAREA_DESKTOP__ = { version, platform }`.
-- **Badge:** Marea already writes the count in the page title ("(3) Marea"); `on_document_title_changed` reads it.
-  macOS and Linux use `set_badge_count`; Windows uses an overlay icon (`icons/badges/*.png`, 1–9 and 9+).
+- **Badge (0.2.1):** unread waves plus unread mail, the two numbers next to «Waves» and «Correo» in Marea's
+  menu. With the window on screen the bridge takes them from Marea: the waves from the page title ("(3) Marea"),
+  the mail from the menu's counter (`a[data-nav="mail"]:not(.sub) .badge`) each time Marea fires
+  `marea:mailcount`. With the window hidden Marea stops asking its server, so the bridge asks: the waves from the
+  `api.php?a=inbox` request it already makes for notifications (unread, not archived nor in the trash), the mail
+  from `api.php?a=panel_mail` every 5 minutes (the sum of `boxes[].unseen`), as often as Marea itself. It calls
+  `set_badge`; macOS and Linux use `set_badge_count` (Linux only on docks that support the Unity launcher API);
+  Windows uses an overlay icon (`icons/badges/*.png`, 1–9 and 9+). Until 0.2.0 the app read only the title.
+  These parts of Marea are a contract: Marea's brief lists them under "don't break the desktop app".
+- **Drag and drop belongs to Marea** (0.2.1): the window is built with `disable_drag_drop_handler()`. With
+  Tauri's handler on, every drag over the window went to the app (for file drops into the app itself): on macOS
+  and Windows Marea never saw a single drag (mail onto a folder, files into an email or a transfer), and on Linux
+  it never saw files. The app has no use for dropped files of its own.
 - **Links:** see the comment at the top of `links.rs`. On macOS the navigation handler can't tell the main frame
   from inner frames (videos, emails), so web navigations are allowed there and `on_page_load` corrects a whole
   window that ended up on another site.
