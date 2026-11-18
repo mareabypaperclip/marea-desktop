@@ -1,6 +1,7 @@
 // Runs the app's bridge (as macOS) inside the test Marea with a fake app behind it, and checks the new parts:
-// notifications of new messages, opening that wave on focus, the title bar room and drag region, location, and
-// the number on the app's icon (unread waves and mail, with the window on screen and hidden).
+// notifications of new messages, opening that wave on focus, the title bar room and drag region, location, the
+// number on the app's icon (unread waves and mail, with the window on screen and hidden) and openInBrowser; then,
+// as Windows, the window buttons the bridge draws.
 //
 // Needs the Marea repository next to this one (or MAREA_REPO) with its test install running, and Playwright.
 // It changes wave 4 of the test install (marks it unread) and puts it back. Run: node tools/check-bridge.mjs
@@ -82,6 +83,31 @@ await a.click('dialog[open] button:has-text("Usar mi ubicación")');
 await a.waitForTimeout(2000);
 const loc = await a.evaluate(() => ({ asked: window.__calls.some((c) => c[0] === 'locate'), saved: localStorage.getItem('marea.wx'), dialog: !!document.querySelector('dialog[open]') }));
 ok(loc.asked && loc.saved && JSON.parse(loc.saved).lat === 39.47 && !loc.dialog, 'location comes from the app and Marea keeps it ' + JSON.stringify(loc));
+
+// Opening one of Marea's own addresses in the browser (0.2.4): only this Marea's addresses, only its top window
+const open = await a.evaluate(async () => {
+  const d = window.__MAREA_DESKTOP__;
+  const opened = () => window.__calls.filter((c) => c[0] === 'open_external').map((c) => c[1].url);
+  const before = opened().length;
+  const out = { has: typeof d.openInBrowser === 'function', frozen: Object.isFrozen(d), keys: [d.version, d.platform] };
+  out.result = await d.openInBrowser('#/enlazar/abc');
+  out.sent = opened().slice(before);
+  const refused = async (u) => { try { await d.openInBrowser(u); return false; } catch (e) { return true; } };
+  out.refused = [await refused('https://accounts.google.com/o/oauth2/v2/auth'), await refused('javascript:alert(1)'),
+    await refused('http://[bad'), await refused('//evil.example/x'), await refused(location.origin.replace('localhost', '127.0.0.1') + '/')];
+  out.after = opened().length - before;
+  const f = document.createElement('iframe'); document.body.append(f); // an inner frame of this same page
+  await new Promise((r) => { setTimeout(r, 300); });
+  const fd = f.contentWindow.__MAREA_DESKTOP__;
+  out.frame = { bridge: !!fd, open: fd ? typeof fd.openInBrowser : 'none' };
+  f.remove();
+  out.here = location.href.split('#')[0];
+  return out;
+});
+ok(open.has && open.frozen && open.keys.join() === '0.2.0,macos' && open.result === undefined, 'openInBrowser is there, read-only, next to version and platform ' + JSON.stringify(open.keys));
+ok(open.sent.length === 1 && open.sent[0] === open.here + '#/enlazar/abc', 'openInBrowser sends this Marea\'s address to the app ' + JSON.stringify(open.sent));
+ok(open.refused.every(Boolean) && open.after === 1, 'other sites, other schemes, bad and look-alike addresses are refused ' + JSON.stringify(open.refused));
+ok(open.frame.bridge && open.frame.open === 'undefined', 'inner frames get no openInBrowser ' + JSON.stringify(open.frame));
 ok(errors.length === 0, 'no page errors ' + JSON.stringify(errors));
 
 // Windows: no Windows frame, so the bridge draws minimize, maximize and close at the top right
