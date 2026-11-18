@@ -23,5 +23,7 @@ Isacar (Paperclip). Read `NOTES.md` before changing anything.
   `src-tauri/`), and look at the app running (see *Testing locally* in `NOTES.md`), with screenshots for Isacar.
 - Every release: same version number in the three files, tag `vX.Y.Z`, and tell Isacar what changed, what is
   untested on real machines and the security notes.
-- Keep the Marea roadmap (a Claude doc, linked from the main repository's `CLAUDE.md`) in sync when the app's
-  plans change.
+- The app has its own roadmap: the «App de escritorio» tab of the Marea roadmap (a Claude doc, linked from the main
+  repository's `CLAUDE.md`; Isacar gives you the link). Keep it in sync when the app's plans change, and read the
+  part you change first. The other tabs and sections are Marea's: touch them only for what the app needs from
+  Marea. The app also has its own chat with Isacar, apart from Marea's.
