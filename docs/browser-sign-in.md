@@ -1,8 +1,8 @@
 # Linking Google and Microsoft in the browser
 
 What Marea and the desktop app each do so that «Enlazar con Google» and «Enlazar con Microsoft» open in the
-person's own browser, as in Slack. Proposal of 18 November 2026: Marea's part goes in Marea 0.25, the app's part
-in the app version after 0.2.3. The app's part can ship first: Marea only uses it when it finds it.
+person's own browser, as in Slack. Agreed on 18 November 2026: Marea's part goes in Marea 0.25; the app's part
+shipped first, in 0.2.4, because Marea only uses it when it finds it.
 
 ## Why
 
@@ -76,9 +76,11 @@ The names are suggestions; only `openInBrowser` is a contract with the app.
   who finds the link.
 - **Nothing new for the admin:** same callback addresses, same client ids and secrets.
 
-## The app's part
+## The app's part (done in 0.2.4)
 
-- **`window.__MAREA_DESKTOP__.openInBrowser(url)`**, in the bridge, returns a promise. Only in the top window (not
+- **`window.__MAREA_DESKTOP__.openInBrowser(url)`**, in the bridge, returns a promise that resolves when the
+  browser was asked (with nothing) and rejects with an `Error` otherwise. Relative addresses are read against the
+  page's own address, so `openInBrowser('#/enlazar/' + token)` works. Only in the top window (not
   in the frames of emails or videos). It only accepts addresses on the page's own origin (https, or
   `http://localhost…` for testing); anything else is refused. It calls the `open_external` command the page
   already has: **no new permission**.

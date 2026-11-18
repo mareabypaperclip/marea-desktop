@@ -3,6 +3,10 @@
 The desktop app of [Marea](https://github.com/mareabypaperclip/marea) (Tauri 2: macOS, Windows, Linux). Owner:
 Isacar (Paperclip). Read `NOTES.md` before changing anything.
 
+Claude Opus, in the app's own chat, takes care of everything about the app, end to end: code, releases, its
+roadmap to 1.0 and what it needs from Marea (Isacar, 18 November 2026). Marea itself is made by Claude Fable in its
+own sessions: ask Marea for things through Isacar, with a message ready to send.
+
 ## Talking to Isacar
 
 - **Always in Spanish**, short sentences: he often reads on his phone. No flattery; be honest about what is untested.

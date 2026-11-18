@@ -1,5 +1,14 @@
 # Changes
 
+## 0.2.4
+
+- **Ready to link Google and Microsoft in your browser.** From Marea 0.25, «Enlazar con Google» and «Enlazar con
+  Microsoft» will open in your usual browser, as in Slack, instead of inside the app, where Google refuses to sign
+  in. This version brings the app's part; with an older Marea nothing changes.
+
+**Security:** your Marea may now ask the app to open one of its own addresses in your browser, with the permission
+it already had to open links outside. The app refuses any other site, and inner frames (emails, videos) can't ask.
+
 ## 0.2.3
 
 - **Windows: Marea from top to bottom, like Slack.** The window no longer has the white Windows title bar: Marea's

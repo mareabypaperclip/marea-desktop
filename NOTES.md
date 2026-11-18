@@ -31,7 +31,12 @@ What a future session needs to know to keep working on Marea for desktop. Read i
     Windows, its window buttons.
 - **The bridge** (`src-tauri/src/bridge.js`, injected before every page): replaces `window.Notification` so
   Marea's standard notifications become system notifications, sends clicks on links to other sites to the
-  browser, and exposes `window.__MAREA_DESKTOP__ = { version, platform }`.
+  browser, and exposes `window.__MAREA_DESKTOP__ = { version, platform, openInBrowser }` (read-only).
+  `openInBrowser(url)` (0.2.4) exists only in Marea's top window (not on the connection screen nor in inner
+  frames), accepts only addresses of the page's own origin and sends them to `open_external`, which checks them
+  again; it resolves when the browser was asked and rejects anything else. No new permission: the page already had
+  `allow-open-external`, and only your Marea's origin has it. It is a contract the other way round: Marea uses it,
+  when it finds it, to link Google and Microsoft in the browser (`docs/browser-sign-in.md`).
 - **Windows title bar (0.2.3):** Marea reaches the top of the window, as on macOS. `windowButtons()` in the
   bridge draws minimize, maximize or restore, and close at the top right with Windows' sizes (46 × 32 px) and
   colours (red to close), drawn as SVG so they look the same on Windows 10 and 11, in the colour of Marea's top
@@ -55,8 +60,9 @@ What a future session needs to know to keep working on Marea for desktop. Read i
   it never saw files. The app has no use for dropped files of its own.
 - **Links:** see the comment at the top of `links.rs`. On macOS the navigation handler can't tell the main frame
   from inner frames (videos, emails), so web navigations are allowed there and `on_page_load` corrects a whole
-  window that ended up on another site. Google's and Microsoft's sign-in pages stay inside for now; the plan to
-  open them in the browser, agreed with Marea 0.25, is in `docs/browser-sign-in.md`.
+  window that ended up on another site. Google's and Microsoft's sign-in pages stay allowed inside, because
+  Mareas before 0.25 still link that way; from 0.25 Marea sends that step to the browser with `openInBrowser`
+  (`docs/browser-sign-in.md`).
 - **Marea's shortcuts in the menus** (`actions.rs`): each menu item runs a fixed script in the Marea page that
   changes `location.hash` (`#/mail`, `#/new`…) or presses one of Marea's keys on the page body (⌘K for the
   Assistant, `?` for its shortcuts). They only run while the window shows the chosen Marea. ⌘K has no native

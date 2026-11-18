@@ -1,6 +1,7 @@
 // Bridge between your Marea and the desktop app. Loaded in every page before the page itself.
 //
-// - Tells Marea it runs inside the app (window.__MAREA_DESKTOP__), in case it ever wants to behave differently.
+// - Tells Marea it runs inside the app (window.__MAREA_DESKTOP__), in case it ever wants to behave differently,
+//   and lets it open one of its own addresses in the browser (openInBrowser, for linking Google and Microsoft).
 // - Notifications Marea sends through the browser's standard API (Notification) become system notifications.
 // - Links to other sites open in your browser, not inside the window.
 // - On Windows and Linux, Ctrl+1 to Ctrl+7 open Marea's sections and Ctrl+, its settings (on macOS the menu bar
@@ -21,8 +22,11 @@
   if (window.__MAREA_DESKTOP__) return;
 
   var isLocal = location.protocol === 'tauri:' || location.hostname === 'tauri.localhost';
+  var desktop = { version: '__VERSION__', platform: '__PLATFORM__' };
+  // Marea's own page (not the connection screen, not inner frames) may also open one of its addresses in the browser
+  if (!isLocal && window.top === window) desktop.openInBrowser = openInBrowser;
   Object.defineProperty(window, '__MAREA_DESKTOP__', {
-    value: Object.freeze({ version: '__VERSION__', platform: '__PLATFORM__' }),
+    value: Object.freeze(desktop),
     enumerable: false,
     configurable: false,
     writable: false,
@@ -40,6 +44,25 @@
     } catch (e) {
       return Promise.reject(e);
     }
+  }
+
+  // ── Opening one of Marea's own addresses in the browser (0.2.4) ──
+  // For steps that can't happen inside an app, such as linking a Google account (Google refuses to sign in inside
+  // embedded web views). Marea calls window.__MAREA_DESKTOP__.openInBrowser(url) only when it finds it, so older
+  // versions of either side keep working (docs/browser-sign-in.md). Only addresses of the page's own origin: links
+  // to other sites already go to the browser when clicked. The app's `open_external` command checks the address
+  // again, and only your Marea's origin may call it.
+  function openInBrowser(url) {
+    var target;
+    try {
+      target = new URL(String(url), location.href);
+    } catch (e) {
+      return Promise.reject(new Error('Not a valid address'));
+    }
+    if (target.origin !== location.origin || (target.protocol !== 'https:' && target.protocol !== 'http:')) {
+      return Promise.reject(new Error('Only addresses of this Marea open in the browser'));
+    }
+    return invoke('open_external', { url: target.href }).then(function () {});
   }
 
   // ── System notifications ──
