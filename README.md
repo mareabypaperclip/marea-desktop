@@ -26,8 +26,9 @@ and adds what a browser tab can't. It's small, it starts fast and it uses the we
 
 ## Features
 
-- **An app of its own.** Its own window and icon in the Dock, the taskbar or your launcher. On macOS, Marea's
-  blue bar reaches the top of the window, with the window buttons inside it. It remembers its size and position,
+- **An app of its own.** Its own window and icon in the Dock, the taskbar or your launcher. On macOS and
+  Windows, Marea's own top bar reaches the top of the window, with the window buttons inside it, like Slack. It
+  remembers its size and position,
   can open at login (ready in the background), and a second launch just brings the window back.
 - **Notifications from the system** for new messages, mentions, calendar reminders and calls, with the app's
   name and icon, while the window isn't in front. Each wave's own setting (muted, mentions only, snoozed) is

@@ -1,5 +1,15 @@
 # Changes
 
+## 0.2.3
+
+- **Windows: Marea from top to bottom, like Slack.** The window no longer has the white Windows title bar: Marea's
+  own top bar reaches the top of the window, in your Marea's colour, with minimize, maximize and close at the top
+  right. The window is dragged from that bar, and double-clicking it maximizes. On the Google and Microsoft
+  sign-in pages the usual Windows bar comes back, because those pages can't show our buttons.
+
+**Security:** on Windows, the Marea you connect to may also minimize, maximize and close the app's window (the
+same as its buttons do). Nothing else changes.
+
 ## 0.2.2
 
 - **Checking for updates works on any connection.** The app now finds the latest version through the address
