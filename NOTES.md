@@ -42,7 +42,8 @@ What a future session needs to know to keep working on Marea for desktop. Read i
   it never saw files. The app has no use for dropped files of its own.
 - **Links:** see the comment at the top of `links.rs`. On macOS the navigation handler can't tell the main frame
   from inner frames (videos, emails), so web navigations are allowed there and `on_page_load` corrects a whole
-  window that ended up on another site.
+  window that ended up on another site. Google's and Microsoft's sign-in pages stay inside for now; the plan to
+  open them in the browser, agreed with Marea 0.25, is in `docs/browser-sign-in.md`.
 - **Marea's shortcuts in the menus** (`actions.rs`): each menu item runs a fixed script in the Marea page that
   changes `location.hash` (`#/mail`, `#/new`…) or presses one of Marea's keys on the page body (⌘K for the
   Assistant, `?` for its shortcuts). They only run while the window shows the chosen Marea. ⌘K has no native
