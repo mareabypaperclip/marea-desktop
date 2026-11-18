@@ -40,8 +40,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Intel Mac on purpose: GitHub's Apple Silicon runners are often short of capacity.
-        platform: [macos-15-intel, windows-latest]
+        # Apple Silicon Mac: GitHub's Intel Mac machines (macos-15-intel) were often unavailable in November 2026.
+        platform: [macos-15, windows-latest]
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4

@@ -70,9 +70,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Intel machine on purpose: GitHub's Apple Silicon runners are often short of capacity, and the
-          # universal build compiles both architectures anyway.
-          - platform: macos-15-intel
+          # Apple Silicon machine: on 18 November 2026 GitHub had no free Intel Mac machines (macos-15-intel, its
+          # last Intel image) for two releases in a row. The universal build compiles both architectures anyway.
+          - platform: macos-15
             args: --target universal-apple-darwin
           - platform: windows-latest
             args: ""
