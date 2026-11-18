@@ -13,7 +13,7 @@ What a future session needs to know to keep working on Marea for desktop. Read i
   - `capabilities/local.json`: the connection screen may call `app_info`, `start`, `check_server`, `connect`,
     `retry`, `cancel_setup` and `open_external`.
   - At runtime, `grant()` in `lib.rs` adds a capability for `https://<server>/*` with only `allow-notify`,
-    `allow-open-external` and `allow-set-badge`, and on macOS three more, each with its reason:
+    `allow-open-external` and `allow-set-badge`, and a few more on macOS and Windows, each with its reason:
     - `allow-set-badge` (0.2.1): the number on the app's icon. Marea's page title only has the unread waves
       ("(3) Marea"), and the unread mail is just as pending, so the bridge counts both and hands the app one
       whole number. The worst a page could do with it is show a wrong number on the icon.
@@ -22,11 +22,24 @@ What a future session needs to know to keep working on Marea for desktop. Read i
     - `core:window:allow-start-dragging` and `core:window:allow-internal-toggle-maximize`: with the title bar
       overlaid, Marea's top bar is the only place to drag the window from (and double-click to zoom). The worst
       a page could do with them is move or zoom the window.
+    - Windows (0.2.3): the window has no Windows frame (`decorations(false)` with `shadow(true)`, like Slack),
+      so the same two, plus `core:window:allow-minimize`, `allow-toggle-maximize`, `allow-is-maximized` and
+      `allow-close`, for the buttons the bridge draws at the top right. The worst a page could do with them is
+      move, minimize, maximize or close the window, and closing only hides it, as the real button does.
     The plugins (notification, opener, dialog, store, autostart) are used from Rust only: no page has their
-    JavaScript permissions. The connection screen also gets the two window permissions, for its drag strip.
+    JavaScript permissions. The connection screen also gets the window permissions, for its drag strip and, on
+    Windows, its window buttons.
 - **The bridge** (`src-tauri/src/bridge.js`, injected before every page): replaces `window.Notification` so
   Marea's standard notifications become system notifications, sends clicks on links to other sites to the
   browser, and exposes `window.__MAREA_DESKTOP__ = { version, platform }`.
+- **Windows title bar (0.2.3):** Marea reaches the top of the window, as on macOS. `windowButtons()` in the
+  bridge draws minimize, maximize or restore, and close at the top right with Windows' sizes (46 × 32 px) and
+  colours (red to close), drawn as SVG so they look the same on Windows 10 and 11, in the colour of Marea's top
+  bar; their labels come from the locale files (`window.*`). Marea's bar gets `padding-right` for them and is the
+  drag region; pages without it get a thin strip. Google's and Microsoft's sign-in pages can't draw the buttons,
+  so `on_page_load` gives the window its Windows frame back there and takes it away on Marea and the connection
+  screen. Windows 11's Snap layouts don't appear when hovering our maximize button (they need the real one);
+  Win+Z, Win+arrows and dragging to the edges still work.
 - **Badge (0.2.1):** unread waves plus unread mail, the two numbers next to «Waves» and «Correo» in Marea's
   menu. With the window on screen the bridge takes them from Marea: the waves from the page title ("(3) Marea"),
   the mail from the menu's counter (`a[data-nav="mail"]:not(.sub) .badge`) each time Marea fires

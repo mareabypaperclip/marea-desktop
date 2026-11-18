@@ -8,12 +8,14 @@
 // - Notifies new messages while the window isn't in front: Marea itself only does it for reminders and calls,
 //   because web push doesn't exist inside apps. Coming back to the window right after one opens that wave.
 // - Puts the number of unread waves and mail on the app's icon (the Dock, the taskbar).
-// - macOS: Marea's top bar reaches the top of the window, with room for the window buttons, and the window is
-//   dragged from it; and your location comes from the system (the web engine never gives it inside apps).
+// - macOS and Windows: Marea's top bar reaches the top of the window, with room for the window buttons (on
+//   Windows the bridge draws them, like Slack), and the window is dragged from it.
+// - macOS: your location comes from the system (the web engine never gives it inside apps).
 //
 // It can only ask the app for a few harmless things: show a notification, open a link outside, put a number on
-// the app's icon and, on macOS, your location (behind the system's own prompt) and moving the window. No reading
-// files or touching the computer: the app's permissions allow nothing more.
+// the app's icon, moving the window (and on Windows minimizing, maximizing and closing it) and, on macOS, your
+// location (behind the system's own prompt). No reading files or touching the computer: the app's permissions
+// allow nothing more.
 (function () {
   'use strict';
   if (window.__MAREA_DESKTOP__) return;
@@ -25,8 +27,11 @@
     configurable: false,
     writable: false,
   });
-  if (isLocal || window.top !== window) return; // the connection screen and inner frames don't need it
+  // Windows: the window's own buttons, here because the connection screen needs them too (see windowButtons)
+  if ('__PLATFORM__' === 'windows' && window.top === window) windowButtons();
+  if (isLocal || window.top !== window) return; // the connection screen and inner frames don't need the rest
 
+  var BUTTONS_WIDTH = 138; // Windows: minimize, maximize and close, 46 px each
   var OAUTH = ['accounts.google.com', 'login.microsoftonline.com', 'login.microsoft.com', 'login.live.com', 'account.live.com'];
 
   function invoke(cmd, args) {
@@ -204,21 +209,23 @@
     lastShown = null;
   });
 
-  // ── macOS: the window's top bar is Marea's own ──
+  // ── macOS and Windows: the window's top bar is Marea's own ──
   // Styles go through the CSSOM (element.style): Marea's Content Security Policy rightly blocks <style> elements.
-  if ('__PLATFORM__' === 'macos') {
+  // macOS keeps its window buttons at the top left (inside Marea's bar); on Windows the bridge draws them at the
+  // top right (windowButtons). Either way the bar makes room for them and the window is dragged from it.
+  if ('__PLATFORM__' === 'macos' || '__PLATFORM__' === 'windows') {
+    var mac = '__PLATFORM__' === 'macos';
     var strip = document.createElement('div');
     strip.id = 'marea-desktop-drag';
     strip.setAttribute('data-tauri-drag-region', '');
-    [['position', 'fixed'], ['top', '0'], ['left', '0'], ['right', '0'], ['height', '28px'], ['z-index', '2147483646']]
-      .forEach(function (rule) {
-        strip.style.setProperty(rule[0], rule[1]);
-      });
+    css(strip, [['position', 'fixed'], ['top', '0'], ['left', '0'], ['right', mac ? '0' : BUTTONS_WIDTH + 'px'],
+      ['height', mac ? '28px' : '32px'], ['z-index', '2147483646']]);
     var fit = function () {
       var top = document.querySelector('header.top');
       if (top && top.getAttribute('data-tauri-drag-region') !== 'deep') {
         top.setAttribute('data-tauri-drag-region', 'deep'); // empty parts of the bar drag; its buttons still work
-        top.style.setProperty('padding-left', '86px', 'important'); // room for the window buttons
+        // room for the window buttons
+        top.style.setProperty(mac ? 'padding-left' : 'padding-right', (mac ? 86 : BUTTONS_WIDTH + 8) + 'px', 'important');
       }
       strip.style.setProperty('display', top ? 'none' : 'block'); // pages without the bar: a thin strip instead
       if (document.body && !strip.isConnected) document.body.appendChild(strip);
@@ -229,7 +236,9 @@
     };
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ready);
     else ready();
+  }
 
+  if ('__PLATFORM__' === 'macos') {
     // ── macOS: your location, from the system ──
     var geolocation = {
       getCurrentPosition: function (success, failure) {
@@ -284,5 +293,128 @@
       },
       true
     );
+  }
+
+  // ── Helpers ──
+  function css(element, rules) {
+    rules.forEach(function (rule) {
+      element.style.setProperty(rule[0], rule[1]);
+    });
+  }
+
+  // ── Windows: minimize, maximize and close, drawn by the app ──
+  // The window has no Windows frame (like Slack): Marea reaches the top and these three buttons sit at the top
+  // right, with Windows' own sizes, symbols and colours (red to close). The symbols are drawn (SVG), not taken
+  // from Windows' icon font, so they look the same on Windows 10 and 11. Closing keeps Marea next to the clock, as
+  // always. They take the colour of Marea's top bar, or a dark one where there's no bar. The keyboard keeps
+  // Windows' own keys (Win+↑, Win+↓, Alt+F4), so they stay out of the page's tab order, like Windows' own.
+  function windowButtons() {
+    var LABELS = "__LABELS__";
+    var SHAPES = {
+      minimize: [['path', { d: 'M0 5.5H10' }]],
+      maximize: [['rect', { x: '0.5', y: '0.5', width: '9', height: '9' }]],
+      restore: [['rect', { x: '0.5', y: '2.5', width: '7', height: '7' }], ['path', { d: 'M2.5 2.5V0.5H9.5V7.5H7.5' }]],
+      close: [['path', { d: 'M0.5 0.5L9.5 9.5M9.5 0.5L0.5 9.5' }]],
+    };
+    var symbol = function (name) {
+      var NS = 'http://www.w3.org/2000/svg';
+      var svg = document.createElementNS(NS, 'svg');
+      [['width', '10'], ['height', '10'], ['viewBox', '0 0 10 10'], ['fill', 'none'], ['stroke', 'currentColor'],
+        ['stroke-width', '1'], ['aria-hidden', 'true']].forEach(function (a) {
+        svg.setAttribute(a[0], a[1]);
+      });
+      SHAPES[name].forEach(function (shape) {
+        var el = document.createElementNS(NS, shape[0]);
+        Object.keys(shape[1]).forEach(function (k) {
+          el.setAttribute(k, shape[1][k]);
+        });
+        svg.appendChild(el);
+      });
+      return svg;
+    };
+    var label = 'main';
+    try {
+      label = window.__TAURI_INTERNALS__.metadata.currentWindow.label || label;
+    } catch (e) {}
+    var call = function (command) {
+      return invoke('plugin:window|' + command, { label: label });
+    };
+    var box = document.createElement('div');
+    box.id = 'marea-desktop-buttons';
+    css(box, [['position', 'fixed'], ['top', '0'], ['right', '0'], ['height', '32px'], ['display', 'flex'],
+      ['z-index', '2147483647'], ['color', '#1f1f1f']]);
+    var onDark = false;
+    var button = function (name, action) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.tabIndex = -1;
+      b.appendChild(symbol(name));
+      b.title = LABELS[name];
+      b.setAttribute('aria-label', LABELS[name]);
+      css(b, [['width', '46px'], ['height', '32px'], ['margin', '0'], ['padding', '0'], ['border', '0'],
+        ['border-radius', '0'], ['background', 'transparent'], ['color', 'inherit'], ['cursor', 'default'],
+        ['display', 'flex'], ['align-items', 'center'], ['justify-content', 'center'], ['outline', 'none']]);
+      b.addEventListener('mouseenter', function () {
+        var red = b.getAttribute('data-name') === 'close';
+        b.style.setProperty('background', red ? '#c42b1c' : onDark ? 'rgba(255,255,255,0.16)' : 'rgba(0,0,0,0.06)');
+        if (red) b.style.setProperty('color', '#fff');
+      });
+      b.addEventListener('mouseleave', function () {
+        b.style.setProperty('background', 'transparent');
+        b.style.setProperty('color', 'inherit');
+      });
+      b.addEventListener('click', action);
+      b.setAttribute('data-name', name);
+      box.appendChild(b);
+      return b;
+    };
+    var max;
+    var state = function () {
+      call('is_maximized')
+        .then(function (on) {
+          var name = on ? 'restore' : 'maximize';
+          max.replaceChildren(symbol(name));
+          max.title = LABELS[name];
+          max.setAttribute('aria-label', LABELS[name]);
+        })
+        .catch(function () {});
+    };
+    button('minimize', function () {
+      call('minimize').catch(function () {});
+    });
+    max = button('maximize', function () {
+      call('toggle_maximize').then(state).catch(function () {});
+    });
+    button('close', function () {
+      call('close').catch(function () {});
+    });
+    var paint = function () {
+      var top = document.querySelector('header.top');
+      var color = top ? getComputedStyle(top).color : '#1f1f1f';
+      box.style.setProperty('color', color);
+      var rgb = (color.match(/\d+(\.\d+)?/g) || ['31', '31', '31']).map(Number);
+      onDark = 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2] > 140; // light symbols: a dark bar behind
+      if (document.body && !box.isConnected) document.body.appendChild(box);
+    };
+    var resized = 0;
+    window.addEventListener('resize', function () {
+      clearTimeout(resized);
+      resized = setTimeout(state, 150);
+    });
+    var start = function () {
+      paint();
+      state();
+      var queued = false;
+      new MutationObserver(function () {
+        if (queued) return;
+        queued = true;
+        requestAnimationFrame(function () {
+          queued = false;
+          paint();
+        });
+      }).observe(document.body, { childList: true, subtree: true });
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+    else start();
   }
 })();

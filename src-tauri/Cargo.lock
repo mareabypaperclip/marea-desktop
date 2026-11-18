@@ -2175,7 +2175,7 @@ dependencies = [
 
 [[package]]
 name = "marea-desktop"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "objc2",
  "reqwest 0.12.28",

@@ -1,6 +1,6 @@
 [package]
 name = "marea-desktop"
-version = "0.2.2"
+version = "0.2.3"
 description = "Marea para Mac y Windows"
 authors = ["Paperclip"]
 license = "AGPL-3.0-or-later"

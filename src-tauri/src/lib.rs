@@ -109,6 +109,16 @@ fn grant<R: Runtime>(app: &AppHandle<R>, origin: &str) -> Result<(), String> {
         .permission("allow-notify")
         .permission("allow-open-external")
         .permission("allow-set-badge");
+    // Windows: the window has no Windows frame, so Marea's top bar moves it and the bridge's buttons minimize,
+    // maximize and close it (closing only hides it, as always). The worst a page could do is the same.
+    #[cfg(target_os = "windows")]
+    let capability = capability
+        .permission("core:window:allow-start-dragging")
+        .permission("core:window:allow-internal-toggle-maximize")
+        .permission("core:window:allow-minimize")
+        .permission("core:window:allow-toggle-maximize")
+        .permission("core:window:allow-is-maximized")
+        .permission("core:window:allow-close");
     #[cfg(target_os = "macos")]
     let capability = capability
         .permission("allow-locate")
@@ -271,7 +281,17 @@ fn open_external(app: AppHandle, url: String) -> Result<(), String> {
 // ───────────── The window ─────────────
 
 fn build_main<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<WebviewWindow<R>> {
-    let script = BRIDGE.replace("__VERSION__", env!("CARGO_PKG_VERSION")).replace("__PLATFORM__", PLATFORM);
+    // The labels of the window buttons the bridge draws on Windows, in the app's language
+    let labels = serde_json::json!({
+        "minimize": t("window.minimize"),
+        "maximize": t("window.maximize"),
+        "restore": t("window.restore"),
+        "close": t("window.close"),
+    });
+    let script = BRIDGE
+        .replace("__VERSION__", env!("CARGO_PKG_VERSION"))
+        .replace("__PLATFORM__", PLATFORM)
+        .replace("\"__LABELS__\"", &labels.to_string());
     let on_nav = app.clone();
     let on_new = app.clone();
     let on_download = app.clone();
@@ -287,6 +307,11 @@ fn build_main<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<WebviewWindow<R>>
 
     // macOS: no grey title bar. The page reaches the top of the window and the window buttons sit inside
     // Marea's own top bar (the bridge makes room for them and makes that bar the place to drag the window from).
+    // Windows: no Windows frame either, like Slack. Marea reaches the top of the window and the bridge draws the
+    // minimize, maximize and close buttons at the top right; the shadow keeps the window's edge and its corners.
+    #[cfg(target_os = "windows")]
+    let builder = builder.decorations(false).shadow(true);
+
     #[cfg(target_os = "macos")]
     let builder = builder
         .title_bar_style(tauri::TitleBarStyle::Overlay)
@@ -336,6 +361,13 @@ fn build_main<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<WebviewWindow<R>>
                 return;
             }
             let url = payload.url().clone();
+            // Windows: the sign-in pages of Google and Microsoft can't draw our window buttons, so there the
+            // window gets back its Windows frame; on Marea and the connection screen it goes again.
+            #[cfg(target_os = "windows")]
+            {
+                let ours = links::is_local(&url) || links::same_origin(&url, current_origin(&on_load).as_deref());
+                let _ = window.set_decorations(!ours);
+            }
             if links::main_frame_is_foreign(&url, current_origin(&on_load).as_deref()) {
                 open_outside(&on_load, &url);
                 let _ = window.eval("history.back()");

@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "local",
-  "description": "The connection screen (the app's own page): choose a server, check it and enter, and drag the window by its top. Nothing else.",
+  "description": "The connection screen (the app's own page): choose a server, check it and enter, and move, minimize, maximize and close the window (on Windows the app draws those buttons itself). Nothing else.",
   "local": true,
   "windows": [
     "main"
@@ -15,6 +15,10 @@
     "allow-cancel-setup",
     "allow-open-external",
     "core:window:allow-start-dragging",
-    "core:window:allow-internal-toggle-maximize"
+    "core:window:allow-internal-toggle-maximize",
+    "core:window:allow-minimize",
+    "core:window:allow-toggle-maximize",
+    "core:window:allow-is-maximized",
+    "core:window:allow-close"
   ]
 }

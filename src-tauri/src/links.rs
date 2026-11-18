@@ -35,7 +35,7 @@ pub fn is_oauth(url: &Url) -> bool {
     url.scheme() == "https" && url.host_str().is_some_and(|h| OAUTH_HOSTS.contains(&h))
 }
 
-fn same_origin(url: &Url, server: Option<&str>) -> bool {
+pub fn same_origin(url: &Url, server: Option<&str>) -> bool {
     server.is_some_and(|o| url.origin().ascii_serialization() == o)
 }
 

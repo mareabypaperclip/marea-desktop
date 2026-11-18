@@ -16,6 +16,7 @@ const { chromium } = await import(process.env.PLAYWRIGHT || '/opt/npm-tools/node
 
 const bridge = fs.readFileSync(path.join(here, '..', 'src-tauri', 'src', 'bridge.js'), 'utf8')
   .replace(/__PLATFORM__/g, 'macos').replace(/__VERSION__/g, '0.2.0')
+  .replace('"__LABELS__"', JSON.stringify({ minimize: 'Minimizar', maximize: 'Maximizar', restore: 'Restaurar', close: 'Cerrar' }))
   .replace('setInterval(lookForNews, 45000)', 'setInterval(lookForNews, 2000)')
   .replace('setTimeout(lookForNews, 5000)', 'setTimeout(lookForNews, 1500)')
   .replace('setInterval(mailWhileHidden, 300000)', 'setInterval(mailWhileHidden, 2000)');
@@ -82,5 +83,33 @@ await a.waitForTimeout(2000);
 const loc = await a.evaluate(() => ({ asked: window.__calls.some((c) => c[0] === 'locate'), saved: localStorage.getItem('marea.wx'), dialog: !!document.querySelector('dialog[open]') }));
 ok(loc.asked && loc.saved && JSON.parse(loc.saved).lat === 39.47 && !loc.dialog, 'location comes from the app and Marea keeps it ' + JSON.stringify(loc));
 ok(errors.length === 0, 'no page errors ' + JSON.stringify(errors));
+
+// Windows: no Windows frame, so the bridge draws minimize, maximize and close at the top right
+const win = await browser.newContext({ viewport: { width: 1280, height: 800 }, locale: 'es-ES' });
+const windowsBridge = fs.readFileSync(path.join(here, '..', 'src-tauri', 'src', 'bridge.js'), 'utf8')
+  .replace(/__PLATFORM__/g, 'windows').replace(/__VERSION__/g, '0.2.3')
+  .replace('"__LABELS__"', JSON.stringify({ minimize: 'Minimizar', maximize: 'Maximizar', restore: 'Restaurar', close: 'Cerrar' }));
+await win.addInitScript(fake.replace("if (cmd === 'locate')", "if (cmd === 'plugin:window|toggle_maximize') { window.__max = !window.__max; return Promise.resolve(null); }\n  if (cmd === 'plugin:window|is_maximized') return Promise.resolve(!!window.__max);\n  if (cmd === 'locate')") + '\n' + windowsBridge);
+const w = await win.newPage();
+const werrors = []; w.on('pageerror', (e) => werrors.push(e.message));
+await w.goto(B);
+ok((await w.locator('#marea-desktop-buttons button').count()) === 3, 'windows: three window buttons on the sign-in page');
+await w.fill('input[type=email]', 'ana@example.com'); await w.fill('input[type=password]', 'supersecreta1');
+await w.click('button.primary:has-text("Entrar")'); await w.waitForSelector('.shell'); await w.waitForTimeout(600);
+const wtop = await w.evaluate(() => {
+  const t = document.querySelector('header.top'); const box = document.getElementById('marea-desktop-buttons'); const r = box.getBoundingClientRect();
+  return { drag: t.getAttribute('data-tauri-drag-region'), pad: getComputedStyle(t).paddingRight, right: Math.round(innerWidth - r.right), top: Math.round(r.top),
+    labels: [...box.querySelectorAll('button')].map((b) => b.getAttribute('aria-label')), color: getComputedStyle(box).color, headerColor: getComputedStyle(t).color };
+});
+ok(wtop.drag === 'deep' && wtop.pad === '146px' && wtop.right === 0 && wtop.top === 0, 'windows: buttons at the top right, the bar makes room and drags ' + JSON.stringify(wtop));
+ok(wtop.labels.join() === 'Minimizar,Maximizar,Cerrar' && wtop.color === wtop.headerColor, 'windows: labels in the app language and the bar colour ' + JSON.stringify(wtop.labels));
+await w.click('#marea-desktop-buttons button[data-name=minimize]');
+await w.click('#marea-desktop-buttons button[data-name=maximize]'); await w.waitForTimeout(200);
+await w.click('#marea-desktop-buttons button[data-name=close]');
+const wcalls = await w.evaluate(() => window.__calls.map((c) => c[0]).filter((c) => c.startsWith('plugin:window|')));
+ok(['plugin:window|minimize', 'plugin:window|toggle_maximize', 'plugin:window|close'].every((c) => wcalls.includes(c)), 'windows: the buttons ask the app ' + JSON.stringify(wcalls));
+ok((await w.getAttribute('#marea-desktop-buttons button[data-name=maximize]', 'aria-label')) === 'Restaurar', 'windows: maximized shows «Restaurar»');
+ok(werrors.length === 0, 'windows: no page errors ' + JSON.stringify(werrors));
+await win.close();
 execSync(`mysql oladev -e "UPDATE marea_participants p JOIN marea_waves w ON w.id = p.wave_id SET p.last_read_seq = w.seq WHERE p.wave_id = 4"`);
 await browser.close();

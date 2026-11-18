@@ -27,8 +27,8 @@ rápido y usa el motor web que ya trae tu sistema.
 
 ## Qué hace
 
-- **Una aplicación propia.** Su ventana y su icono en el Dock, la barra de tareas o el lanzador. En macOS, la
-  barra azul de Marea llega hasta arriba, con los botones de la ventana dentro. Recuerda el tamaño y la posición,
+- **Una aplicación propia.** Su ventana y su icono en el Dock, la barra de tareas o el lanzador. En macOS y en
+  Windows, la barra de Marea llega hasta arriba, con los botones de la ventana dentro, como en Slack. Recuerda el tamaño y la posición,
   puede abrirse al iniciar sesión (lista, en segundo plano) y, si la abres otra vez, vuelve a mostrar la ventana.
 - **Avisos del sistema** de mensajes nuevos, menciones, recordatorios de la agenda y llamadas, con el nombre y el
   icono de la aplicación, cuando la ventana no está delante. Respeta lo que hayas elegido en cada wave
