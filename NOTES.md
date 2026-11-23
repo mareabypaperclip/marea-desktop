@@ -109,7 +109,16 @@ What a future session needs to know to keep working on Marea for desktop. Read i
    add a `## X.Y.Z` section to `CHANGELOG.md`: the release notes' *What's new* comes from it.
 2. Commit, then tag `vX.Y.Z` and push the tag. `.github/workflows/release.yml` creates a draft release, builds
    macOS (universal), Windows and Linux in parallel and publishes the release only if all three succeed.
-3. Or run the *Release* workflow by hand from the Actions tab.
+3. Or run the *Release* workflow by hand from the Actions tab. **From Claude's sessions this is the only way:**
+   pushing a tag is refused there, so merge the version's pull request and start the workflow on `main`
+   (`gh api -X POST repos/mareabypaperclip/marea-desktop/actions/workflows/release.yml/dispatches -f ref=main`). The
+   tag is then created when the draft is published, on whatever `main` is at that moment: merge nothing else into
+   `main` until the release is out, or the tag lands on the wrong commit.
+4. **GitHub's Mac machines are often unavailable** (November 2026: jobs cancelled after 15 minutes without ever
+   getting a machine, on Intel and Apple Silicon alike; GitHub's own issue tracker shows the same). Windows and Linux
+   stay in the draft; re-run only the failed job (`…/actions/runs/<id>/rerun-failed-jobs`). The European evening and
+   night worked: 0.2.4 got an Intel Mac at once at 22:37 UTC after a day of failures. Keep `macos-15-intel`: the
+   Apple Silicon attempt never got a machine either.
 
 ## Testing locally (Linux, headless)
 
@@ -131,8 +140,14 @@ the main repository (`http://localhost:8090/dev/`) works.
 - **Notifications:** new messages come from the bridge's own check (see above), up to 45 s late. Important
   mail isn't notified yet (reading the mailbox every minute is expensive); Marea's own reminders and calls
   arrive as before.
-- **Passkeys** may not work inside the macOS webview (WKWebView needs associated-domain entitlements, which need
-  signing). Password + 2FA code works.
+- **Passkeys** don't work inside the macOS webview (WKWebView needs associated-domain entitlements for each
+  domain, which need signing, and every Marea has its own domain). Password + 2FA code works. Plan (Isacar,
+  20 November 2026): Marea stops offering them inside the app unless `window.__MAREA_DESKTOP__.passkeys === true`
+  (Marea 0.25.1; no app change needed, the app sets the flag only where they are proven to work); later, signing in
+  through the system's sign-in window (ASWebAuthenticationSession), where passkeys work with any domain, and Marea
+  hands the session to the app with a one-time code bound to a secret only the app holds (app 0.4, Marea 0.26).
+  The details sent to Marea are in the roadmap's «App de escritorio» tab. WebKitGTK (Linux) has no passkeys at all;
+  Windows is untested.
 - **Screen sharing** in calls depends on each webview; untested.
 - **Clicking a notification** brings the app forward; the wave opens because focus follows it within 30 s.
 
