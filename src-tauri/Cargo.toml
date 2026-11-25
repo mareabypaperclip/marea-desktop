@@ -1,6 +1,6 @@
 [package]
 name = "marea-desktop"
-version = "0.2.4"
+version = "0.4.0"
 description = "Marea para Mac y Windows"
 authors = ["Paperclip"]
 license = "AGPL-3.0-or-later"
@@ -30,6 +30,11 @@ sys-locale = "0.3"
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
 tokio = { version = "1", features = ["time", "sync"] }
 tauri-plugin-autostart = "2"
+
+[target.'cfg(target_os = "windows")'.dependencies]
+# Which Windows this is: Mica, the material behind the window, needs Windows 11. Tauri itself already uses it (tao,
+# wry, window-vibrancy), so nothing new is downloaded or built.
+windows-version = "0.1"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 # Core Location (your position, for the weather): plain Objective-C messages, see location.rs

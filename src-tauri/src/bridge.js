@@ -1,13 +1,15 @@
 // Bridge between your Marea and the desktop app. Loaded in every page before the page itself.
 //
 // - Tells Marea it runs inside the app (window.__MAREA_DESKTOP__), in case it ever wants to behave differently,
-//   and lets it open one of its own addresses in the browser (openInBrowser, for linking Google and Microsoft).
+//   lets it open one of its own addresses in the browser (openInBrowser, for linking Google and Microsoft) and, on
+//   macOS, tells it the window shows the system's material behind it (vibrancy).
 // - Notifications Marea sends through the browser's standard API (Notification) become system notifications.
 // - Links to other sites open in your browser, not inside the window.
 // - On Windows and Linux, Ctrl+1 to Ctrl+7 open Marea's sections and Ctrl+, its settings (on macOS the menu bar
 //   has these keys).
-// - Notifies new messages while the window isn't in front: Marea itself only does it for reminders and calls,
-//   because web push doesn't exist inside apps. Coming back to the window right after one opens that wave.
+// - Notifies new messages and new mail while the window isn't in front: Marea itself only does it for reminders and
+//   calls, because web push doesn't exist inside apps. Coming back to the window right after one opens that wave
+//   or that email.
 // - Puts the number of unread waves and mail on the app's icon (the Dock, the taskbar).
 // - macOS and Windows: Marea's top bar reaches the top of the window, with room for the window buttons (on
 //   Windows the bridge draws them, like Slack), and the window is dragged from it.
@@ -23,8 +25,13 @@
 
   var isLocal = location.protocol === 'tauri:' || location.hostname === 'tauri.localhost';
   var desktop = { version: '__VERSION__', platform: '__PLATFORM__' };
-  // Marea's own page (not the connection screen, not inner frames) may also open one of its addresses in the browser
-  if (!isLocal && window.top === window) desktop.openInBrowser = openInBrowser;
+  if (!isLocal && window.top === window) {
+    // Marea's own page (not the connection screen, not inner frames) may also open one of its addresses in the browser
+    desktop.openInBrowser = openInBrowser;
+    // The window shows the system's material behind the page (0.4, macOS only): Marea 0.25.1 and later then leave
+    // their sidebar transparent so it shows through. Marea reads this once, when it loads.
+    if ('__VIBRANCY__' === 'yes') desktop.vibrancy = true;
+  }
   Object.defineProperty(window, '__MAREA_DESKTOP__', {
     value: Object.freeze(desktop),
     enumerable: false,
@@ -224,6 +231,43 @@
   }
   setTimeout(lookForNews, 5000);
   setInterval(lookForNews, 45000);
+
+  // ── New mail, as system notifications (0.4; Marea 0.25.1 and later) ──
+  // Once a minute, Marea's `mail_new` (made for the app: cheap, refused above 240 calls an hour) lists what reached
+  // each inbox since the last look and is still unread, newest first. Marea already leaves out blocked senders, mail
+  // read elsewhere and everything during «No molestar» or «solo menciones». The first call only returns a mark, so
+  // nothing old is announced. A Marea without `mail_new` answers the first call with an error (404): the bridge
+  // stops asking until the page loads again. Never while you're looking at the window, and at most 3 a minute: the
+  // rest are in Marea. Clicking one opens the newest, like the waves above.
+  var mailMark = null; // null: not asked yet; false: this Marea has no `mail_new`
+  var MAIL_HASH = /^#\/mail\/b\/[^/?#\s]+\/[^/?#\s]+$/;
+  function lookForMail() {
+    if (mailMark === false || !document.querySelector('.shell')) return;
+    var first = mailMark === null;
+    fetch(apiUrl('mail_new') + (first ? '' : '&since=' + encodeURIComponent(mailMark)), { credentials: 'same-origin' })
+      .then(function (r) {
+        if (r.ok) return r.json();
+        if (first && r.status >= 400 && r.status < 500 && r.status !== 429) mailMark = false;
+        return null;
+      })
+      .then(function (data) {
+        if (!data) return;
+        if (typeof data.mark !== 'string' || !Array.isArray(data.items)) {
+          if (first) mailMark = false;
+          return;
+        }
+        mailMark = data.mark;
+        if (first || (document.visibilityState === 'visible' && document.hasFocus())) return;
+        data.items.slice(0, 3).forEach(function (m, i) {
+          var from = String(m.from || 'Marea');
+          invoke('notify', { title: from.slice(0, 200), body: String(m.subject || '').slice(0, 1000) }).catch(function () {});
+          if (i === 0 && MAIL_HASH.test(String(m.url))) lastShown = { hash: String(m.url), at: Date.now() };
+        });
+      })
+      .catch(function () {});
+  }
+  setTimeout(lookForMail, 8000);
+  setInterval(lookForMail, 60000);
   // Clicking a notification brings the app forward: if that happens soon after one, open its wave.
   window.addEventListener('focus', function () {
     if (lastShown && Date.now() - lastShown.at < 30000 && location.hash !== lastShown.hash) {

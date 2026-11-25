@@ -20,7 +20,10 @@ const bridge = fs.readFileSync(path.join(here, '..', 'src-tauri', 'src', 'bridge
   .replace('"__LABELS__"', JSON.stringify({ minimize: 'Minimizar', maximize: 'Maximizar', restore: 'Restaurar', close: 'Cerrar' }))
   .replace('setInterval(lookForNews, 45000)', 'setInterval(lookForNews, 2000)')
   .replace('setTimeout(lookForNews, 5000)', 'setTimeout(lookForNews, 1500)')
-  .replace('setInterval(mailWhileHidden, 300000)', 'setInterval(mailWhileHidden, 2000)');
+  .replace('setInterval(mailWhileHidden, 300000)', 'setInterval(mailWhileHidden, 2000)')
+  .replace(/__VIBRANCY__/g, 'yes')
+  .replace('setTimeout(lookForMail, 8000)', 'setTimeout(lookForMail, 1000)')
+  .replace('setInterval(lookForMail, 60000)', 'setInterval(lookForMail, 1500)');
 const fake = `window.__calls = []; window.__fetched = [];
 { const f = window.fetch.bind(window); window.fetch = (u, o) => { window.__fetched.push(String(u)); return f(u, o); }; }
 window.__TAURI_INTERNALS__ = { invoke: (cmd, args) => { window.__calls.push([cmd, args]);
@@ -30,6 +33,13 @@ window.__TAURI_INTERNALS__ = { invoke: (cmd, args) => { window.__calls.push([cmd
 const browser = await chromium.launch({ executablePath: '/usr/bin/google-chrome', args: ['--no-sandbox'] });
 const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 }, locale: 'es-ES' });
 await ctx.addInitScript(fake + '\n' + bridge);
+// Marea 0.25.1's `mail_new`, answered by the test: every call is kept, and the answer is whatever mailReply says
+const mailCalls = [];
+let mailReply = { status: 200, body: { mark: 'm1', items: [], quiet: '' } };
+await ctx.route('**/api.php?a=mail_new*', (route) => {
+  mailCalls.push(route.request().url());
+  route.fulfill({ status: mailReply.status, contentType: 'application/json', body: JSON.stringify(mailReply.body) });
+});
 const a = await ctx.newPage();
 const errors = []; a.on('pageerror', (e) => errors.push(e.message));
 await a.goto(B);
@@ -108,12 +118,60 @@ ok(open.has && open.frozen && open.keys.join() === '0.2.0,macos' && open.result 
 ok(open.sent.length === 1 && open.sent[0] === open.here + '#/enlazar/abc', 'openInBrowser sends this Marea\'s address to the app ' + JSON.stringify(open.sent));
 ok(open.refused.every(Boolean) && open.after === 1, 'other sites, other schemes, bad and look-alike addresses are refused ' + JSON.stringify(open.refused));
 ok(open.frame.bridge && open.frame.open === 'undefined', 'inner frames get no openInBrowser ' + JSON.stringify(open.frame));
+const vib = await a.evaluate(async () => {
+  const f = document.createElement('iframe'); document.body.append(f);
+  await new Promise((r) => { setTimeout(r, 300); });
+  const out = { top: window.__MAREA_DESKTOP__.vibrancy, frame: f.contentWindow.__MAREA_DESKTOP__ ? f.contentWindow.__MAREA_DESKTOP__.vibrancy : 'none' };
+  f.remove();
+  return out;
+});
+ok(vib.top === true && vib.frame === undefined, 'macOS: vibrancy is true in Marea\'s window, not in inner frames ' + JSON.stringify(vib));
+
+// New mail (0.4, Marea 0.25.1's `mail_new`): the first answer only gives the mark; then at most 3 notifications,
+// newest first, each call with the mark of the one before; the newest opens on focus; never while you're looking
+ok(mailCalls.length >= 1 && !mailCalls[0].includes('since='), 'mail: the first call asks without a mark ' + JSON.stringify(mailCalls.slice(0, 2)));
+const mailItems = [1, 2, 3, 4].map((n) => ({ box: '3', addr: 'dev@demo.test', id: String(80 - n), from: 'Remitente ' + n,
+  subject: 'Asunto ' + n, date: 1795000000 - n, url: '#/mail/b/3/' + (80 - n) }));
+await a.evaluate(() => { Document.prototype.hasFocus = () => false; window.__calls.length = 0; });
+mailReply = { status: 200, body: { mark: 'm2', items: mailItems, quiet: '' } };
+for (let i = 0; i < 20 && !(await a.evaluate(() => window.__calls.some((c) => c[0] === 'notify'))); i++) await a.waitForTimeout(250);
+mailReply = { status: 200, body: { mark: 'm3', items: [], quiet: '' } };
+await a.waitForTimeout(2000);
+const mailNotes = await a.evaluate(() => window.__calls.filter((c) => c[0] === 'notify').map((c) => c[1]));
+ok(mailNotes.length === 3 && mailNotes[0].title === 'Remitente 1' && mailNotes[0].body === 'Asunto 1' && mailNotes[2].title === 'Remitente 3',
+  'mail: 3 notifications at most, newest first ' + JSON.stringify(mailNotes.map((n) => n.title)));
+ok(mailCalls.some((u) => u.includes('since=m1')) && mailCalls.some((u) => u.includes('since=m2')), 'mail: each call sends the mark of the one before');
+const opened = await a.evaluate(() => { window.dispatchEvent(new Event('focus')); return location.hash; });
+ok(opened === '#/mail/b/3/79', 'mail: focus right after the notification opens the newest email ' + opened);
+// Not an address of a mail in Marea: notified, but focus opens nothing (a fresh page: wait for its first call)
+const beforeReload = mailCalls.length;
+await a.goto(B + '#/'); await a.waitForSelector('.shell');
+for (let i = 0; i < 20 && mailCalls.length <= beforeReload; i++) await a.waitForTimeout(250);
+await a.evaluate(() => { Document.prototype.hasFocus = () => false; window.__calls.length = 0; });
+mailReply = { status: 200, body: { mark: 'm5', items: [{ ...mailItems[0], url: 'javascript:alert(1)' }], quiet: '' } };
+for (let i = 0; i < 20 && !(await a.evaluate(() => window.__calls.some((c) => c[0] === 'notify'))); i++) await a.waitForTimeout(250);
+mailReply = { status: 200, body: { mark: 'm6', items: [], quiet: '' } };
+const stayed = await a.evaluate(() => { const before = location.hash; window.dispatchEvent(new Event('focus')); return location.hash === before; });
+ok(stayed, 'mail: an address that isn\'t a mail in Marea is never opened');
+// While you're looking at the window: nothing
+await a.evaluate(() => { Document.prototype.hasFocus = () => true; window.__calls.length = 0; });
+mailReply = { status: 200, body: { mark: 'm7', items: mailItems.slice(0, 1), quiet: '' } };
+await a.waitForTimeout(2500);
+mailReply = { status: 200, body: { mark: 'm8', items: [], quiet: '' } };
+ok(!(await a.evaluate(() => window.__calls.some((c) => c[0] === 'notify'))), 'mail: nothing while you are looking at the window');
+// A Marea without `mail_new` (404 at the first call): the bridge stops asking
+mailReply = { status: 404, body: { error: 'Acción desconocida' } };
+await a.reload(); await a.waitForSelector('.shell');
+const callsAfter404 = mailCalls.length;
+await a.waitForTimeout(4500);
+ok(mailCalls.length - callsAfter404 <= 1, 'mail: a Marea without mail_new is asked once and left alone (' + (mailCalls.length - callsAfter404) + ' calls)');
+mailReply = { status: 200, body: { mark: 'm1', items: [], quiet: '' } };
 ok(errors.length === 0, 'no page errors ' + JSON.stringify(errors));
 
 // Windows: no Windows frame, so the bridge draws minimize, maximize and close at the top right
 const win = await browser.newContext({ viewport: { width: 1280, height: 800 }, locale: 'es-ES' });
 const windowsBridge = fs.readFileSync(path.join(here, '..', 'src-tauri', 'src', 'bridge.js'), 'utf8')
-  .replace(/__PLATFORM__/g, 'windows').replace(/__VERSION__/g, '0.2.3')
+  .replace(/__PLATFORM__/g, 'windows').replace(/__VERSION__/g, '0.2.3').replace(/__VIBRANCY__/g, 'no')
   .replace('"__LABELS__"', JSON.stringify({ minimize: 'Minimizar', maximize: 'Maximizar', restore: 'Restaurar', close: 'Cerrar' }));
 await win.addInitScript(fake.replace("if (cmd === 'locate')", "if (cmd === 'plugin:window|toggle_maximize') { window.__max = !window.__max; return Promise.resolve(null); }\n  if (cmd === 'plugin:window|is_maximized') return Promise.resolve(!!window.__max);\n  if (cmd === 'locate')") + '\n' + windowsBridge);
 const w = await win.newPage();
@@ -128,6 +186,7 @@ const wtop = await w.evaluate(() => {
     labels: [...box.querySelectorAll('button')].map((b) => b.getAttribute('aria-label')), color: getComputedStyle(box).color, headerColor: getComputedStyle(t).color };
 });
 ok(wtop.drag === 'deep' && wtop.pad === '146px' && wtop.right === 0 && wtop.top === 0, 'windows: buttons at the top right, the bar makes room and drags ' + JSON.stringify(wtop));
+ok((await w.evaluate(() => window.__MAREA_DESKTOP__.vibrancy)) === undefined, 'windows: no vibrancy (Mica waits for a test on a real Windows)');
 ok(wtop.labels.join() === 'Minimizar,Maximizar,Cerrar' && wtop.color === wtop.headerColor, 'windows: labels in the app language and the bar colour ' + JSON.stringify(wtop.labels));
 await w.click('#marea-desktop-buttons button[data-name=minimize]');
 await w.click('#marea-desktop-buttons button[data-name=maximize]'); await w.waitForTimeout(200);

@@ -53,17 +53,24 @@ pub fn set_open_at_login<R: Runtime>(app: &AppHandle<R>, on: bool) {
 }
 
 /// The macOS menu bar. Compiled everywhere, so the checks on Linux cover it too; only macOS uses it.
-#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
-pub fn app_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
-    use tauri::menu::{AboutMetadataBuilder, PredefinedMenuItem, SubmenuBuilder};
-
-    let about = AboutMetadataBuilder::new()
+/// What «About Marea» shows on every system: name, version, the copyright with the licence and «no warranty» (the
+/// AGPL asks interactive programs to show both) and where the source code is.
+fn about_metadata() -> tauri::menu::AboutMetadata<'static> {
+    tauri::menu::AboutMetadataBuilder::new()
         .name(Some("Marea"))
         .version(Some(env!("CARGO_PKG_VERSION")))
         .copyright(Some(t("about.copyright")))
+        .license(Some("AGPL-3.0"))
         .website(Some("https://github.com/mareabypaperclip/marea-desktop"))
         .website_label(Some(t("menu.help_github")))
-        .build();
+        .build()
+}
+
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+pub fn app_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
+    use tauri::menu::{PredefinedMenuItem, SubmenuBuilder};
+
+    let about = about_metadata();
     let label = |key: &str| Some(t(key));
 
     let item = |id: &str, key: &str, accelerator: Option<&str>| {
@@ -155,6 +162,7 @@ pub fn tray_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Menu<R>> {
     let item = |id: &str, key: &str| MenuItemBuilder::with_id(id, t(key)).build(app);
     MenuBuilder::new(app)
         .item(&item(OPEN, "menu.open")?)
+        .item(&tauri::menu::PredefinedMenuItem::about(app, Some(&t("menu.about")), Some(about_metadata()))?)
         .separator()
         .item(&item(actions::NEW_WAVE, "menu.new_wave")?)
         .item(&item(actions::COMPOSE, "menu.compose")?)
