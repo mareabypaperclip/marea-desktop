@@ -106,6 +106,14 @@ What a future session needs to know to keep working on Marea for desktop. Read i
   Pages without that bar (sign-in, public pages) get a 28 px invisible drag strip; so does the connection screen.
 - **macOS entitlements** (`Entitlements.plist`): the bundle is signed with the hardened runtime, which blocks
   the camera, the microphone and location unless declared. Without them, calls would fail silently.
+- **Dictation on macOS (0.4.1):** Marea's dictation uses WebKit's `webkitSpeechRecognition`, which WebKit only allows
+  if the app's `Info.plist` has `NSSpeechRecognitionUsageDescription`; without it the page gets
+  "service-not-allowed" (WebKit bug 239816). Then come the system's prompts for speech recognition and the
+  microphone, and WebKit's own question for the site (wry doesn't implement the private
+  `_webView:requestSpeechRecognitionPermissionForOrigin:decisionHandler:`, so WebKit's default applies). The Mac
+  also needs Siri or Dictation turned on for the service to exist. Apple's recognition may send the audio to Apple.
+  Untested on a real Mac. Windows (WebView2) and Linux (WebKitGTK) don't offer `webkitSpeechRecognition` to apps;
+  Marea 0.25.2 brings a fallback (recording and transcribing with its AI).
 - **Open at login:** `tauri-plugin-autostart` (LaunchAgent on macOS, registry on Windows, `~/.config/autostart`
   on Linux) with the `--autostart` argument, which starts the window hidden.
 - **Closing the window hides it** (Dock on macOS, tray on Windows/Linux); quitting is *Quit Marea*. A second
