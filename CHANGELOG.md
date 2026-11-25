@@ -1,5 +1,15 @@
 # Changes
 
+## 0.4.1
+
+- **Dictation works in the Mac app.** The microphone of Marea's command bar said «No se pudo dictar
+  (service-not-allowed)»: the Mac only lets an app use speech recognition if it says why, and the app didn't. The
+  first time, macOS asks for permission to use speech recognition (and the microphone, if it hadn't yet).
+
+**Security and privacy:** dictation uses Apple's speech recognition, as in Safari: depending on your Mac and
+language, what you dictate may be sent to Apple to turn it into text. Nothing else changes, and the app asks for
+nothing new on Windows or Linux.
+
 ## 0.4.0
 
 - **New mail, as system notifications.** While the window isn't in front, new mail in your inboxes arrives as a

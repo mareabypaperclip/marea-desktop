@@ -6,7 +6,11 @@
   <key>NSCameraUsageDescription</key>
   <string>Marea uses the camera for video calls.</string>
   <key>NSMicrophoneUsageDescription</key>
-  <string>Marea uses the microphone for calls and voice messages.</string>
+  <string>Marea uses the microphone for calls, voice messages and dictation.</string>
+  <!-- Dictation in Marea (the microphone of the command bar) uses WebKit's speech recognition, which refuses with
+       "service-not-allowed" unless the app declares this (0.4.1) -->
+  <key>NSSpeechRecognitionUsageDescription</key>
+  <string>Marea uses speech recognition to turn what you dictate into text, for example in the command bar.</string>
   <!-- Your location, only when Marea asks (the weather): see src/location.rs -->
   <key>NSLocationUsageDescription</key>
   <string>Marea uses your location only when you ask it to, for example to show your local weather.</string>
