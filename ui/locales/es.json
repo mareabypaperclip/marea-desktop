@@ -88,7 +88,7 @@
   "window.maximize": "Maximizar",
   "window.restore": "Restaurar",
   "window.close": "Cerrar",
-  "about.copyright": "© 2026 Paperclip · Licencia AGPL-3.0",
+  "about.copyright": "© 2026 Paperclip. Software libre con licencia AGPL-3.0, sin ninguna garantía.",
   "download.done.title": "Descarga terminada",
   "download.done.body": "{name} está en tu carpeta de Descargas.",
   "download.failed.title": "No se pudo descargar",

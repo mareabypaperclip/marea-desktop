@@ -280,6 +280,20 @@ fn open_external(app: AppHandle, url: String) -> Result<(), String> {
 
 // ───────────── The window ─────────────
 
+/// Whether the main window shows the system's material behind the page, so the bridge can tell Marea `vibrancy`
+/// (Marea then leaves its sidebar transparent). macOS: always. Windows: only Windows 11 (build 22000 and later),
+/// with Mica. Linux: never. Without material behind it, a transparent sidebar would show the desktop through it.
+fn has_material() -> bool {
+    #[cfg(target_os = "windows")]
+    {
+        windows_version::OsVersion::current().build >= 22000
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        cfg!(target_os = "macos")
+    }
+}
+
 fn build_main<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<WebviewWindow<R>> {
     // The labels of the window buttons the bridge draws on Windows, in the app's language
     let labels = serde_json::json!({
@@ -288,9 +302,11 @@ fn build_main<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<WebviewWindow<R>>
         "restore": t("window.restore"),
         "close": t("window.close"),
     });
+    let material = has_material();
     let script = BRIDGE
         .replace("__VERSION__", env!("CARGO_PKG_VERSION"))
         .replace("__PLATFORM__", PLATFORM)
+        .replace("__VIBRANCY__", if material { "yes" } else { "no" })
         .replace("\"__LABELS__\"", &labels.to_string());
     let on_nav = app.clone();
     let on_new = app.clone();
@@ -311,12 +327,32 @@ fn build_main<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<WebviewWindow<R>>
     // minimize, maximize and close buttons at the top right; the shadow keeps the window's edge and its corners.
     #[cfg(target_os = "windows")]
     let builder = builder.decorations(false).shadow(true);
+    // Windows 11: Mica. Windows 10 stays opaque (Acrylic lags when the window moves), and then the bridge says
+    // nothing about `vibrancy`, so Marea keeps painting its sidebar.
+    #[cfg(target_os = "windows")]
+    let builder = if material {
+        builder
+            .transparent(true)
+            .effects(tauri::window::EffectsBuilder::new().effect(tauri::window::Effect::Mica).build())
+    } else {
+        builder
+    };
 
+    // The system's material behind a transparent window (see `has_material`): pages paint over it as usual, and
+    // Marea 0.25.1 and later leave their sidebar transparent when the bridge says `vibrancy`, so the material shows
+    // there and only there. macOS: the sidebar material, like Mail or Finder.
     #[cfg(target_os = "macos")]
     let builder = builder
         .title_bar_style(tauri::TitleBarStyle::Overlay)
         .hidden_title(true)
-        .traffic_light_position(tauri::LogicalPosition::new(18.0, 28.0));
+        .traffic_light_position(tauri::LogicalPosition::new(18.0, 28.0))
+        .transparent(true)
+        .effects(
+            tauri::window::EffectsBuilder::new()
+                .effect(tauri::window::Effect::Sidebar)
+                .state(tauri::window::EffectState::FollowsWindowActiveState)
+                .build(),
+        );
 
     builder
         .initialization_script(script)

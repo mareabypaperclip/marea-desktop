@@ -88,7 +88,7 @@
   "window.maximize": "Maximitza",
   "window.restore": "Restaura",
   "window.close": "Tanca",
-  "about.copyright": "© 2026 Paperclip · Llicència AGPL-3.0",
+  "about.copyright": "© 2026 Paperclip. Programari lliure amb llicència AGPL-3.0, sense cap garantia.",
   "download.done.title": "Baixada acabada",
   "download.done.body": "{name} és a la teva carpeta de Baixades.",
   "download.failed.title": "No s'ha pogut baixar",

@@ -1,5 +1,21 @@
 # Changes
 
+## 0.4.0
+
+- **New mail, as system notifications.** While the window isn't in front, new mail in your inboxes arrives as a
+  system notification (at most 3 a minute, the newest first); coming back to the window right after one opens that
+  email. Marea decides what counts: not what you've read elsewhere, nor blocked senders, nor anything while «No
+  molestar» or «solo menciones» is on. Needs Marea 0.25.1 or later; with an older Marea nothing changes.
+- **The system's own look.** On macOS, the sidebar material of Mail or Finder behind Marea's sidebar; on Windows
+  11, Mica. Windows 10 and Linux stay as they were. Needs Marea 0.25.1 or later, which leaves its sidebar
+  transparent only when the window has that material behind it.
+- **«About Marea» on Windows and Linux too** (in the menu of the icon next to the clock), and on every system it
+  now says that Marea is free software under the AGPL-3.0 licence, with no warranty.
+
+**Security:** no new permission. The new-mail check uses your Marea's own session, from Marea's own page, once a
+minute; it only reads who sent each new email and its subject, and marks nothing as read. The window is now
+transparent behind the page on macOS and Windows 11 (pages paint over it as before).
+
 ## 0.2.4
 
 - **Ready to link Google and Microsoft in your browser.** From Marea 0.25, «Enlazar con Google» and «Enlazar con

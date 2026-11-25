@@ -30,9 +30,12 @@ and adds what a browser tab can't. It's small, it starts fast and it uses the we
   Windows, Marea's own top bar reaches the top of the window, with the window buttons inside it, like Slack. It
   remembers its size and position,
   can open at login (ready in the background), and a second launch just brings the window back.
-- **Notifications from the system** for new messages, mentions, calendar reminders and calls, with the app's
-  name and icon, while the window isn't in front. Each wave's own setting (muted, mentions only, snoozed) is
-  respected, and coming back to the window right after one opens that wave.
+- **Notifications from the system** for new messages, mentions, new mail, calendar reminders and calls, with the
+  app's name and icon, while the window isn't in front. Each wave's own setting (muted, mentions only, snoozed) and
+  Marea's «Do not disturb» are respected, and coming back to the window right after one opens that wave or that
+  email (new mail needs Marea 0.25.1 or later).
+- **The system's own look.** On macOS and Windows 11, Marea's sidebar shows the system's material behind the window
+  (the sidebar of Mail or Finder on the Mac, Mica on Windows 11), with Marea 0.25.1 or later.
 - **The pending count on the icon:** unread waves and unread mail, as a number on the Dock icon on macOS and on
   the taskbar button on Windows (on Linux, wherever your desktop shows it).
 - **Stays reachable.** Closing the window keeps Marea running in the Dock (macOS) or next to the clock (Windows and

@@ -31,12 +31,33 @@ What a future session needs to know to keep working on Marea for desktop. Read i
     Windows, its window buttons.
 - **The bridge** (`src-tauri/src/bridge.js`, injected before every page): replaces `window.Notification` so
   Marea's standard notifications become system notifications, sends clicks on links to other sites to the
-  browser, and exposes `window.__MAREA_DESKTOP__ = { version, platform, openInBrowser }` (read-only).
+  browser, and exposes `window.__MAREA_DESKTOP__ = { version, platform, openInBrowser, vibrancy }` (read-only;
+  `vibrancy` only when it is `true`).
   `openInBrowser(url)` (0.2.4) exists only in Marea's top window (not on the connection screen nor in inner
   frames), accepts only addresses of the page's own origin and sends them to `open_external`, which checks them
   again; it resolves when the browser was asked and rejects anything else. No new permission: the page already had
   `allow-open-external`, and only your Marea's origin has it. It is a contract the other way round: Marea uses it,
   when it finds it, to link Google and Microsoft in the browser (`docs/browser-sign-in.md`).
+- **The system's material behind the window (0.4, `vibrancy`):** macOS puts the sidebar material (`Effect::Sidebar`,
+  following the window's active state) behind a transparent window, and Windows 11 (build 22000 and later, read with
+  `windows-version`, which Tauri already uses) puts Mica. Windows 10 stays opaque (Acrylic lags when the window
+  moves) and Linux has no effect. `has_material()` in `lib.rs` decides both the effect and the bridge's
+  `vibrancy: true`, so Marea never makes its sidebar transparent over a window with nothing behind it (it would
+  show the desktop). Marea 0.25.1 and later read it once, when the page loads, and only paint their sidebar
+  transparent (with a veil of the panel colour) while signed in and with the window 900 px wide or more; everything
+  else stays opaque, and so do the connection and offline screens (`body` has a background). Since Tauri 2.12.1
+  transparent windows on macOS no longer need `macOSPrivateApi`. Untested on a real Mac and a real Windows 11.
+- **New mail notifications (0.4):** once a minute the bridge calls Marea's `api.php?a=mail_new&since=MARK`
+  (Marea 0.25.1; contract in Marea's `dev/briefs/app-escritorio.md`): `{ mark, items: [{ box, addr, id, from,
+  subject, date, url }], quiet }`. The first call has no `since` and only returns the mark, so nothing old is
+  announced; the mark lives in the page (a reload starts again). Marea leaves out mail read elsewhere, blocked
+  senders and everything during «No molestar» or «solo menciones» (`quiet`), and refuses more than 240 calls an
+  hour. A 4xx other than 429 on the first call means an older Marea: the bridge stops until the page loads again.
+  At most 3 notifications a minute (title: sender, body: subject), never while you're looking at the window; the
+  newest one's `url` (`#/mail/b/BOX/ID`, checked against that shape) opens on focus within 30 s, like the waves.
+- **About (0.4):** `about_metadata()` in `menu.rs`, the same on every system: name, version, the copyright with the
+  licence and «no warranty» (`about.copyright`; the AGPL asks interactive programs to show both) and the
+  repository. macOS has it in the app menu; Windows and Linux, in the menu of the icon next to the clock.
 - **Windows title bar (0.2.3):** Marea reaches the top of the window, as on macOS. `windowButtons()` in the
   bridge draws minimize, maximize or restore, and close at the top right with Windows' sizes (46 × 32 px) and
   colours (red to close), drawn as SVG so they look the same on Windows 10 and 11, in the colour of Marea's top

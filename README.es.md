@@ -30,9 +30,13 @@ rápido y usa el motor web que ya trae tu sistema.
 - **Una aplicación propia.** Su ventana y su icono en el Dock, la barra de tareas o el lanzador. En macOS y en
   Windows, la barra de Marea llega hasta arriba, con los botones de la ventana dentro, como en Slack. Recuerda el tamaño y la posición,
   puede abrirse al iniciar sesión (lista, en segundo plano) y, si la abres otra vez, vuelve a mostrar la ventana.
-- **Avisos del sistema** de mensajes nuevos, menciones, recordatorios de la agenda y llamadas, con el nombre y el
-  icono de la aplicación, cuando la ventana no está delante. Respeta lo que hayas elegido en cada wave
-  (silenciada, solo menciones, pospuesta), y si vuelves a la ventana justo después de un aviso, abre esa wave.
+- **Avisos del sistema** de mensajes nuevos, menciones, correo nuevo, recordatorios de la agenda y llamadas, con
+  el nombre y el icono de la aplicación, cuando la ventana no está delante. Respeta lo que hayas elegido en cada wave
+  (silenciada, solo menciones, pospuesta) y el «No molestar» de Marea, y si vuelves a la ventana justo después de un
+  aviso, abre esa wave o ese correo (el correo nuevo, con Marea 0.25.1 o posterior).
+- **El aspecto de cada sistema.** En macOS y en Windows 11, la columna de Marea deja ver el material del sistema
+  detrás de la ventana (el de la barra lateral de Mail o del Finder en el Mac, Mica en Windows 11), con Marea 0.25.1
+  o posterior.
 - **Los pendientes en el icono:** las waves y los correos sin leer, como un número en el icono del Dock en macOS y
   en el botón de la barra de tareas en Windows (en Linux, donde tu escritorio lo muestre).
 - **Siempre a mano.** Al cerrar la ventana, Marea sigue abierta en el Dock (macOS) o junto al reloj (Windows y
